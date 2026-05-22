@@ -21,19 +21,16 @@ async def trigger_analysis(org_id: str, db: AsyncSession = Depends(get_db), curr
     Trigger a new analysis for an organization.
     Validates that org has data, then queues the analysis job.
     """
-    # Verify org exists
     result = await db.execute(select(Organization).where(Organization.id == org_id))
     org = result.scalar_one_or_none()
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
 
-    # Verify org has messages
     msg_result = await db.execute(select(Message).where(Message.org_id == org_id).limit(1))
     if not msg_result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="No communication data found. Please upload data first.")
 
     try:
-        # Create analysis report record
         analysis = AnalysisReport(
             id=uuid4(),
             org_id=org_id,
@@ -43,8 +40,8 @@ async def trigger_analysis(org_id: str, db: AsyncSession = Depends(get_db), curr
         await db.commit()
 
         # Queue async job (using Celery)
-        from app.workers.analysis_tasks import analyze_organization
-        task = analyze_organization.delay(str(org_id), str(analysis.id))
+        #from app.workers.analysis_tasks import analyze_organization
+        #task = analyze_organization.delay(str(org_id), str(analysis.id))
 
         logger.info(f"✅ Analysis triggered for org {org.name}: {analysis.id}")
 
