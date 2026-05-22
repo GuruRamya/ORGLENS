@@ -49,7 +49,7 @@ app = FastAPI(
 # CORS Configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url, "http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "https://orglens-mu.vercel.app/", "https://orglens-git-main-gururamyas-projects.vercel.app/", "https://orglens-610091ryw-gururamyas-projects.vercel.app/"],
+    allow_origins=[settings.frontend_url, "http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "https://orglens-mu.vercel.app/" ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=int(os.environ.get("PORT", 8000)),
         reload=settings.debug,
         log_level="info"
     )
