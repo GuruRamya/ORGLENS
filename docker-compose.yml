@@ -1,0 +1,144 @@
+version: "3.9"
+
+services:
+  # ─── Database ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: orglens_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: orglens
+      POSTGRES_USER: orglens
+      POSTGRES_PASSWORD: orglens_secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orglens"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: orglens_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── FastAPI Backend ────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.backend
+    container_name: orglens_backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://orglens:orglens_secret@postgres:5432/orglens
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../uploads:/app/uploads
+      - ../logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Celery Worker ──────────────────────────────────────────────────────────
+  celery_worker:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.backend
+    container_name: orglens_celery
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2 -Q celery
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://orglens:orglens_secret@postgres:5432/orglens
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    volumes:
+      - ../uploads:/app/uploads
+      - ../logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ─── Celery Beat (scheduled tasks) ─────────────────────────────────────────
+  celery_beat:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.backend
+    container_name: orglens_beat
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app beat --loglevel=info
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://orglens:orglens_secret@postgres:5432/orglens
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    depends_on:
+      - redis
+
+  # ─── Flower (Celery monitoring UI) ─────────────────────────────────────────
+  flower:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.backend
+    container_name: orglens_flower
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app flower --port=5555 --basic_auth=admin:orglens_flower
+    env_file:
+      - ../.env
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+
+  # ─── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ../orglens-frontend
+      dockerfile: ../docker/Dockerfile.frontend
+    container_name: orglens_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
