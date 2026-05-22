@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Organizations from './pages/Organizations'
-import OrgSetup from "./pages/OrgSetup.jsx"
+import Orgsetup from "./pages/OrgSetup.jsx"
 import DataUpload from './pages/DataUpload'
 import Analysis from './pages/Analysis'
 import Dashboard from './pages/Dashboard'
