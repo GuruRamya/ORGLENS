@@ -46,7 +46,6 @@ numpy==1.26.4
 
 # File Parsing
 python-docx==1.1.0
-openpyxl==3.1.2
 mail-parser==3.15.0
 chardet==5.2.0
 
