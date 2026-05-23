@@ -1,7 +1,3 @@
-"""
-ML Signal Extractor - computes objective signals from raw data.
-No AI here. Pure math/stats/NLP patterns.
-"""
 import numpy as np
 from collections import defaultdict, Counter
 from datetime import datetime
@@ -26,50 +22,28 @@ class MLSignalExtractor:
         """
         logger.info(f"Extracting ML signals from {len(messages)} messages, {len(employees)} employees")
 
-        # Build communication graph
         comm_graph = self._build_comm_graph(messages, employees)
-
-        # Extract all signal categories
         signals = {
             "org_context": org_context,
             "employee_count": len(employees),
             "message_count": len(messages),
             "all_employees": employees,
             "date_range": self._get_date_range(messages),
-
-            # Per-person signals
             "person_signals": self._extract_person_signals(messages, employees, comm_graph),
-
-            # Trust signals
             "trust_signals": self._extract_trust_signals(messages, employees),
-
-            # Network/power signals
             "network_signals": self._extract_network_signals(comm_graph, messages, employees),
-
-            # Decision signals
             "decision_signals": self._extract_decision_signals(messages),
-
-            # Resilience signals
             "resilience_signals": self._extract_resilience_signals(messages, employees, comm_graph),
-
-            # Sentiment signals
             "sentiment_signals": self._extract_sentiment_signals(messages),
-
-            # Cross-team conflict signals
             "conflict_signals": self._extract_conflict_signals(messages),
-
-            # Velocity signals
             "velocity_signals": self._extract_velocity_signals(messages),
         }
 
         logger.info("ML signal extraction complete")
         return signals
 
-    # ─── Communication Graph ──────────────────────────────────────────────────
-
     def _build_comm_graph(self, messages: list[dict], employees: list[dict]) -> dict:
         """Build directed communication graph from messages."""
-        # Map names/emails to canonical IDs
         name_map = {}
         for emp in employees:
             name = (emp.get("name") or "").lower()
@@ -79,25 +53,19 @@ class MLSignalExtractor:
                 name_map[name] = emp_id
             if email:
                 name_map[email] = emp_id
-            # Also map username format (first_last)
             if name:
                 parts = name.split()
                 if len(parts) >= 2:
                     name_map[f"{parts[0]}_{parts[-1]}"] = emp_id
 
-        # Build edges: {sender -> {recipient -> count}}
         edges = defaultdict(lambda: defaultdict(int))
-        node_messages = defaultdict(list)  # sender -> list of messages
+        node_messages = defaultdict(list)  
 
         for msg in messages:
             sender_raw = (msg.get("sender_raw") or "").lower().strip()
             content = msg.get("content") or ""
             channel = msg.get("channel_or_thread") or ""
-
-            # Resolve sender
             sender_id = self._resolve_identity(sender_raw, name_map)
-
-            # Find mentioned people in message
             mentioned = self._find_mentioned_people(content, name_map, employees)
 
             for recipient in mentioned:
@@ -111,7 +79,6 @@ class MLSignalExtractor:
                 "source": msg.get("source"),
             })
 
-        # Compute basic centrality
         all_nodes = set(list(edges.keys()))
         for sender, recipients in edges.items():
             all_nodes.update(recipients.keys())
@@ -135,19 +102,16 @@ class MLSignalExtractor:
     def _resolve_identity(self, raw: str, name_map: dict) -> str:
         """Resolve a raw sender string to canonical ID."""
         raw = raw.lower().strip()
-        # Direct match
         if raw in name_map:
             return name_map[raw]
-        # Email username part
         if "@" in raw:
             username = raw.split("@")[0]
             if username in name_map:
                 return name_map[username]
-        # Partial name match
         for key, val in name_map.items():
             if key in raw or raw in key:
                 return val
-        return raw  # fallback: use raw as ID
+        return raw  
 
     def _find_mentioned_people(self, content: str, name_map: dict, employees: list[dict]) -> list[str]:
         """Find all people mentioned in a message."""
@@ -158,15 +122,12 @@ class MLSignalExtractor:
             if name and name in content_lower:
                 emp_id = emp.get("id") or emp.get("name")
                 mentioned.append(emp_id)
-            # Check first name only
             first_name = name.split()[0] if name else ""
             if first_name and len(first_name) > 3 and first_name in content_lower:
                 emp_id = emp.get("id") or emp.get("name")
                 if emp_id not in mentioned:
                     mentioned.append(emp_id)
         return mentioned
-
-    # ─── Person Signals ───────────────────────────────────────────────────────
 
     def _extract_person_signals(
         self, messages: list[dict], employees: list[dict], comm_graph: dict
@@ -183,73 +144,52 @@ class MLSignalExtractor:
             name = emp.get("name") or ""
             emp_id = emp.get("id") or name
             name_lower = name.lower()
-
-            # Get messages sent by this person
             person_id = name_map.get(name_lower, emp_id)
             sent_msgs = node_msgs.get(person_id, [])
-
-            # Compute signals
             msg_count = len(sent_msgs)
             in_degree = in_deg.get(person_id, 0)
             out_degree = out_deg.get(person_id, 0)
-
-            # Urgency score: how often they use urgent language
             urgency_keywords = ["urgent", "asap", "blocking", "critical", "immediately", "now", "must", "need to"]
             urgency_count = sum(
                 1 for m in sent_msgs
                 if any(kw in (m.get("content") or "").lower() for kw in urgency_keywords)
             )
-
-            # Conviction score: directive language
             conviction_keywords = ["we're moving", "i've decided", "this is my call", "not negotiable", "final decision", "i'll cut"]
             conviction_count = sum(
                 1 for m in sent_msgs
                 if any(kw in (m.get("content") or "").lower() for kw in conviction_keywords)
             )
-
-            # Objection score: how often they push back
             objection_keywords = ["push back", "disagree", "concern", "but ", "however", "not realistic", "fair point"]
             objection_count = sum(
                 1 for m in sent_msgs
                 if any(kw in (m.get("content") or "").lower() for kw in objection_keywords)
             )
-
-            # Escalation score: how often they escalate to leadership
             escalation_keywords = ["escalate", "bring to rajiv", "rajiv —", "need exec", "leadership needs", "can we escalate"]
             escalation_count = sum(
                 1 for m in sent_msgs
                 if any(kw in (m.get("content") or "").lower() for kw in escalation_keywords)
             )
-
-            # Burnout signals
             burnout_keywords = ["burnout", "weekends", "morale", "exhausted", "overcommitted", "stretched", "too much"]
             burnout_signal = sum(
                 1 for m in sent_msgs
                 if any(kw in (m.get("content") or "").lower() for kw in burnout_keywords)
             )
-
-            # Flight risk from structured data
             flight_risk_raw = emp.get("flight_risk") or emp.get("Flight Risk") or "low"
             flight_risk_score = {"low": 0.15, "medium": 0.45, "high": 0.75}.get(
                 str(flight_risk_raw).lower(), 0.15
             )
-
-            # Formal authority from level
             level_authority = {
                 "c-suite": 9.5, "vp": 8.0, "sr mgr": 6.5, "manager": 5.5,
                 "sr ic": 4.5, "ic": 3.0
             }
             level = str(emp.get("level") or "").lower()
             formal_authority = level_authority.get(level, 5.0)
-
-            # Influence score: in_degree (being mentioned/replied to) is a strong signal
             raw_influence = (
                 (in_degree * 2.0) +
                 (conviction_count * 1.5) +
                 (escalation_count * 1.0) +
                 (msg_count * 0.3)
             )
-            # Normalize to 0-10
             influence_score = min(raw_influence, 10.0)
 
             person_signals[name] = {
@@ -305,12 +245,10 @@ class MLSignalExtractor:
 
         return person_signals
 
-    # ─── Trust Signals ────────────────────────────────────────────────────────
 
     def _extract_trust_signals(self, messages: list[dict], employees: list[dict]) -> dict:
         """Compute trust gap signals: stated values vs actual behavior."""
 
-        # Claim keywords (what orgs say they value)
         claim_patterns = {
             "meritocracy": ["merit", "fair", "transparent promotion", "criteria", "equal"],
             "transparency": ["transparent", "open communication", "visible", "shared"],
@@ -319,7 +257,6 @@ class MLSignalExtractor:
             "innovation": ["innovate", "move fast", "experiment", "ship quickly"],
         }
 
-        # Reality counter-signals
         reality_patterns = {
             "meritocracy_violation": [
                 "political", "favoritism", "inconsistent criteria", "perceived", "feels political",
@@ -352,7 +289,6 @@ class MLSignalExtractor:
         for reality, keywords in reality_patterns.items():
             reality_scores[reality] = sum(1 for kw in keywords if kw in all_text)
 
-        # Comp inversion: specific evidence
         comp_inversion_evidence = []
         for msg in messages:
             content = (msg.get("content") or "").lower()
@@ -363,14 +299,12 @@ class MLSignalExtractor:
                     "snippet": (msg.get("content") or "")[:200],
                 })
 
-        # Promotion fairness signals
         promotion_complaints = sum(
             1 for m in messages
             if any(kw in (m.get("content") or "").lower()
                    for kw in ["political", "favoritism", "inconsistent", "perceived", "promotion criteria"])
         )
 
-        # Escalation rate (high escalation = low trust in normal channels)
         escalation_count = sum(
             1 for m in messages
             if any(kw in (m.get("content") or "").lower()
@@ -395,7 +329,6 @@ class MLSignalExtractor:
             ),
         }
 
-    # ─── Network/Power Signals ────────────────────────────────────────────────
 
     def _extract_network_signals(
         self, comm_graph: dict, messages: list[dict], employees: list[dict]
@@ -408,17 +341,14 @@ class MLSignalExtractor:
         node_msgs = comm_graph.get("node_messages", {})
         name_map = comm_graph.get("name_map", {})
 
-        # Build authority map from employee data
         level_authority = {
             "c-suite": 9.5, "vp": 8.0, "sr mgr": 6.5, "manager": 5.5, "sr ic": 4.5, "ic": 3.0
         }
 
-        # Identify bypass patterns: lower-level talking directly to C-suite
         bypass_events = []
         for msg in messages:
             sender_raw = (msg.get("sender_raw") or "").lower()
             content = msg.get("content") or ""
-            # If someone below VP is emailing CEO/CTO directly
             if any(exec_name in content.lower() for exec_name in ["rajiv", "arun kumar", "priya sharma"]):
                 if sender_raw not in ["rajiv_menon", "arun_kumar", "priya_sharma"]:
                     bypass_events.append({
@@ -427,7 +357,6 @@ class MLSignalExtractor:
                         "snippet": content[:150],
                     })
 
-        # Gatekeeper signals: who is mentioned as blocking
         gatekeeper_signals = defaultdict(int)
         gatekeeper_keywords = ["waiting for", "blocked on", "needs approval from", "hasn't responded", "deprioritized"]
         for msg in messages:
@@ -439,7 +368,6 @@ class MLSignalExtractor:
                     if name and name in content:
                         gatekeeper_signals[emp.get("name")] += 1
 
-        # Information silo detection: who talks only within their dept
         dept_comm = defaultdict(set)
         emp_dept_map = {(emp.get("name") or "").lower(): emp.get("department") or "" for emp in employees}
 
@@ -455,11 +383,9 @@ class MLSignalExtractor:
             if len(cross_depts) == 0 and (out_deg.get(node, 0) > 2)
         ]
 
-        # Hub detection: high in-degree = information hub
         sorted_by_in_degree = sorted(in_deg.items(), key=lambda x: x[1], reverse=True)
         top_hubs = sorted_by_in_degree[:5]
 
-        # Isolate detection: low degree on both ends
         all_nodes = comm_graph.get("all_nodes", [])
         isolated = [
             n for n in all_nodes
@@ -481,7 +407,6 @@ class MLSignalExtractor:
             ),
         }
 
-    # ─── Decision Signals ─────────────────────────────────────────────────────
 
     def _extract_decision_signals(self, messages: list[dict]) -> dict:
         """Measure decision velocity and quality patterns."""
@@ -521,7 +446,6 @@ class MLSignalExtractor:
                     "timestamp": str(ts),
                 })
 
-        # Approval chain evidence
         approval_chain_msgs = [
             msg for msg in messages
             if any(kw in (msg.get("content") or "").lower()
@@ -560,7 +484,6 @@ class MLSignalExtractor:
             "reversals": reversals[:5],
         }
 
-    # ─── Resilience Signals ───────────────────────────────────────────────────
 
     def _extract_resilience_signals(
         self, messages: list[dict], employees: list[dict], comm_graph: dict
@@ -606,7 +529,6 @@ class MLSignalExtractor:
             if deg > 2
         ]
 
-        # Succession data from employee CSV
         no_succession = [
             emp for emp in employees
             if str(emp.get("succession") or emp.get("Succession ") or "").lower() in ["", "none", "low", "no"]
@@ -627,7 +549,6 @@ class MLSignalExtractor:
             "no_succession_employees": [e.get("name") for e in no_succession[:5]],
         }
 
-    # ─── Sentiment Signals ────────────────────────────────────────────────────
 
     def _extract_sentiment_signals(self, messages: list[dict]) -> dict:
         """Compute sentiment and emotional signals from messages."""
@@ -666,7 +587,6 @@ class MLSignalExtractor:
             "top_urgent_senders": sorted(urgent_msgs, key=lambda x: x["urg_score"], reverse=True)[:5],
         }
 
-    # ─── Conflict Signals ─────────────────────────────────────────────────────
 
     def _extract_conflict_signals(self, messages: list[dict]) -> dict:
         """Detect cross-team conflicts and tension points."""
@@ -685,7 +605,6 @@ class MLSignalExtractor:
                     "source": msg.get("source"),
                 })
 
-        # Cross-team tension pairs
         tension_pairs = defaultdict(int)
         cross_team_keywords = ["sales vs", "product vs", "engineering vs", "vs product", "vs sales"]
         for msg in messages:
@@ -704,7 +623,6 @@ class MLSignalExtractor:
             )),
         }
 
-    # ─── Velocity Signals ─────────────────────────────────────────────────────
 
     def _extract_velocity_signals(self, messages: list[dict]) -> dict:
         """Measure decision and execution velocity."""
@@ -716,7 +634,6 @@ class MLSignalExtractor:
         delay_msgs = [m for m in messages if any(kw in (m.get("content") or "").lower() for kw in delay_keywords)]
         fast_msgs = [m for m in messages if any(kw in (m.get("content") or "").lower() for kw in fast_keywords)]
 
-        # Domain-specific delays
         domain_delays = defaultdict(int)
         domain_keywords = {
             "hiring": ["hiring", "recruitment", "candidate"],
@@ -739,7 +656,6 @@ class MLSignalExtractor:
             "delay_snippets": [m.get("content", "")[:150] for m in delay_msgs[:5]],
         }
 
-    # ─── Utilities ────────────────────────────────────────────────────────────
 
     def _get_date_range(self, messages: list[dict]) -> dict:
         timestamps = []
@@ -759,7 +675,7 @@ class MLSignalExtractor:
                     pass
 
         avg_response_hours = 0
-        estimated_avg_days = 14  # reasonable default
+        estimated_avg_days = 14  
         if len(timestamps) > 2:
             timestamps.sort()
             gaps = [
