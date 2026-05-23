@@ -40,8 +40,8 @@ async def trigger_analysis(org_id: str, db: AsyncSession = Depends(get_db), curr
         await db.commit()
 
         # Queue async job (using Celery)
-        #from app.workers.analysis_tasks import analyze_organization
-        #task = analyze_organization.delay(str(org_id), str(analysis.id))
+        from app.workers.analysis_tasks import analyze_organization
+        task = analyze_organization.delay(str(org_id), str(analysis.id))
 
         logger.info(f"✅ Analysis triggered for org {org.name}: {analysis.id}")
 
