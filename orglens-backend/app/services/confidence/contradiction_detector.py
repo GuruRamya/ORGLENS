@@ -15,14 +15,14 @@ class ContradictionSeverity(str, Enum):
 @dataclass
 class Contradiction:
     """A gap between stated value and observed behavior."""
-    claim: str                          # "We move fast"
-    observed_reality: str               # "Decisions take 21 days avg"
-    gap_score: float                    # 0-10 (how big is the gap)
+    claim: str                         
+    observed_reality: str               
+    gap_score: float                    
     severity: ContradictionSeverity
-    evidence_quotes: List[str]          # Actual messages
-    root_causes: List[str]              # Why does this gap exist
-    impact: str                         # Business impact of gap
-    recommendation: str                 # How to fix it
+    evidence_quotes: List[str]         
+    root_causes: List[str]              
+    impact: str                         
+    recommendation: str                 
 
 class ContradictionDetector:
     """Find the disconnect between words and actions."""
@@ -44,7 +44,6 @@ class ContradictionDetector:
             if contra:
                 contradictions.append(contra)
         
-        # Sort by severity
         return sorted(contradictions, 
                      key=lambda c: {"low": 1, "medium": 2, "high": 3, "critical": 4}[c.severity.value],
                      reverse=True)
@@ -52,7 +51,6 @@ class ContradictionDetector:
     def _test_claim(self, claim) -> Optional[Contradiction]:
         """Test a single claim against observed data."""
         
-        # Match claim to relevant metric
         if "fast" in claim.claim_text.lower():
             return self._test_speed_claim(claim)
         elif "merit" in claim.claim_text.lower():
@@ -70,9 +68,8 @@ class ContradictionDetector:
         """Does org claim to be fast but actually slow?"""
         avg_days = self.ml_signals.get("avg_decision_days", 14)
         
-        # If they claim to be fast but avg > 14 days, flag it
         if avg_days > 14:
-            gap = min(avg_days - 5, 10)  # Gap score (out of 10)
+            gap = min(avg_days - 5, 10)  
             severity = ContradictionSeverity.CRITICAL if avg_days > 21 else ContradictionSeverity.HIGH
             
             return Contradiction(
@@ -132,7 +129,7 @@ class ContradictionDetector:
         """Do they claim transparency but have high escalation/information hoarding?"""
         escalation_rate = self.ml_signals.get("ml_signals", {}).get("escalation_rate", 0)
         
-        if escalation_rate > 0.15:  # >15% escalation suggests info gaps
+        if escalation_rate > 0.15:  
             gap = min(escalation_rate * 10, 10)
             
             return Contradiction(
