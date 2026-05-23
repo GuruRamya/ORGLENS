@@ -1,16 +1,3 @@
-"""
-Public demo router — no authentication required.
-Exposes read-only dashboard data for the seeded demo organization.
-
-Add to app/main.py:
-    from app.routers import demo
-    app.include_router(demo.router, prefix="/api/demo", tags=["demo"])
-
-Set environment variable:
-    DEMO_ORG_ID=<uuid from seed_demo.py>
-    DEMO_ANALYSIS_ID=<uuid from seed_demo.py>
-"""
-
 import os
 import json
 from uuid import UUID
@@ -25,10 +12,7 @@ from app.services.confidence.confidence_framework import ConfidenceCalculator
 
 router = APIRouter()
 
-# ─── Config ───────────────────────────────────────────────────────────────────
-
 def _get_demo_ids() -> tuple[str | None, str | None]:
-    """Read demo IDs from environment variables."""
     return (
         os.getenv("DEMO_ORG_ID"),
         os.getenv("DEMO_ANALYSIS_ID"),
@@ -36,7 +20,6 @@ def _get_demo_ids() -> tuple[str | None, str | None]:
 
 
 def _parse_json_field(field):
-    """Handle both dict/list and string JSON fields."""
     if field is None:
         return None
     if isinstance(field, str):
@@ -47,14 +30,8 @@ def _parse_json_field(field):
     return field
 
 
-# ─── Endpoints ────────────────────────────────────────────────────────────────
-
 @router.get("/status")
 async def demo_status():
-    """
-    Check whether a demo org is configured.
-    Frontend calls this on the /demo page to know whether to show the dashboard.
-    """
     org_id, analysis_id = _get_demo_ids()
     return {
         "configured": bool(org_id and analysis_id),
@@ -65,26 +42,19 @@ async def demo_status():
 
 @router.get("/report")
 async def get_demo_report(db: AsyncSession = Depends(get_db)):
-    """
-    Return the full dashboard report for the demo org.
-    No authentication required — this is intentionally public.
-    """
     org_id, analysis_id = _get_demo_ids()
-
     if not org_id or not analysis_id:
         raise HTTPException(
             status_code=503,
             detail="Demo organization not configured. Run seed_demo.py first.",
         )
 
-    # Load analysis
     try:
         result = await db.execute(
             select(AnalysisReport).where(AnalysisReport.id == UUID(analysis_id))
         )
         analysis = result.scalar_one_or_none()
     except Exception as e:
-        logger.error(f"Demo report load error: {e}")
         raise HTTPException(status_code=500, detail="Failed to load demo report")
 
     if not analysis:
@@ -96,13 +66,11 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             detail=f"Demo analysis is still {analysis.status.value}. Check back in a few minutes.",
         )
 
-    # Load org
     org_result = await db.execute(
         select(Organization).where(Organization.id == UUID(org_id))
     )
     org = org_result.scalar_one_or_none()
 
-    # Parse JSON fields (handles string vs dict)
     ps = _parse_json_field(analysis.power_structure) or {}
     trust_details = _parse_json_field(analysis.trust_gap_details) or {}
     resilience_details = _parse_json_field(analysis.resilience_details) or {}
@@ -114,7 +82,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
     contradictions = _parse_json_field(analysis.contradictions) or []
     positive_signals = _parse_json_field(analysis.positive_signals) or []
 
-    # Build confidence metrics
     ml_signals = {
         "message_count": analysis.messages_analyzed or 0,
         "employee_count": len(ps.get("nodes", [])),
@@ -140,7 +107,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
         "warnings": metrics.get_warnings(),
     }
 
-    # Helper score functions (mirrors dashboard.py)
     def _score_to_grade(score: float) -> str:
         if score >= 8.5: return "A"
         if score >= 7.0: return "B"
@@ -203,7 +169,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
     avg_days = decision_velocity.get("avg_days", 0)
 
     return {
-        # Meta
         "analysis_id": str(analysis.id),
         "org_id": str(analysis.org_id),
         "org_name": org.name if org else "Demo Organization",
@@ -215,8 +180,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             "end": analysis.date_range_end.isoformat() if analysis.date_range_end else None,
         },
         "is_demo": True,
-
-        # Card 1 — Org Health
         "org_health": {
             "org_health_score": health_score,
             "health_breakdown": analysis.health_breakdown or {},
@@ -224,7 +187,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             "summary": _health_summary(health_score, analysis.health_breakdown or {}),
         },
 
-        # Card 2 — Trust Gap
         "trust_gap": {
             "trust_gap_score": trust_score,
             "severity": _severity_level(trust_score),
@@ -238,7 +200,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             "ml_evidence": trust_details.get("ml_evidence", {}),
         },
 
-        # Card 3 — Power Structure
         "power_structure": {
             "nodes": ps.get("nodes", []),
             "edges": ps.get("edges", []),
@@ -247,13 +208,11 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             "ignored_authorities": sum(1 for n in ps.get("nodes", []) if n.get("type") == "ignored_authority"),
         },
 
-        # Card 4 — Influencers
         "top_influencers": {
             "influencers": analysis.top_influencers or [],
             "total_analyzed": len(analysis.top_influencers) if analysis.top_influencers else 0,
         },
 
-        # Card 5 — Gatekeepers
         "gatekeepers": {
             "gatekeepers": analysis.gatekeepers or [],
             "decision_gatekeepers": sum(
@@ -266,7 +225,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             ),
         },
 
-        # Card 6 — Resilience
         "resilience": {
             "resilience_score": resil_score,
             "risk_level": _resilience_to_risk(resil_score),
@@ -275,7 +233,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             "ml_signals": resilience_details.get("ml_signals", {}),
         },
 
-        # Card 7 — Decision Velocity
         "decision_velocity": {
             "avg_days": avg_days,
             "benchmark": _velocity_benchmark(avg_days),
@@ -285,7 +242,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             "ml_signals": decision_velocity.get("ml_signals", {}),
         },
 
-        # Card 8 — System Diagnosis
         "system_diagnosis": {
             "root_causes": system_diagnosis.get("root_causes", []),
             "who_profits": system_diagnosis.get("who_profits_from_gaps", []),
@@ -298,7 +254,6 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             "alert_signals": system_diagnosis.get("alert_signals", []),
         },
 
-        # Card 9 — Predictions
         "predictions": {
             "attrition_risks": predictions.get("attrition_risk", []),
             "decision_reversal_risks": predictions.get("decision_reversals", []),
@@ -307,14 +262,12 @@ async def get_demo_report(db: AsyncSession = Depends(get_db)):
             "key_risks": predictions.get("key_risks", []),
         },
 
-        # Card 10 — Recommendations
         "recommendations": {
             "recommendations": recs,
             "quick_wins": _extract_quick_wins(recs),
             "total_potential_savings": _calculate_total_savings(recs),
         },
 
-        # Extended cards
         "contradictions": contradictions,
         "positive_signals": positive_signals,
         "archetype": archetype,
