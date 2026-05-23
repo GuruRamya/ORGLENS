@@ -9,11 +9,11 @@ from typing import Optional, Dict, List
 from loguru import logger
 
 class ConfidenceLevel(str, Enum):
-    CRITICAL = "critical"      # <30%
-    LOW = "low"                # 30-50%
-    MEDIUM = "medium"          # 50-70%
-    HIGH = "high"              # 70-85%
-    VERY_HIGH = "very_high"    # >85%
+    CRITICAL = "critical"     
+    LOW = "low"                
+    MEDIUM = "medium"          
+    HIGH = "high"              
+    VERY_HIGH = "very_high"    
 
 class SignalStrength(str, Enum):
     VERY_WEAK = "very_weak"
@@ -29,8 +29,8 @@ class ConfidenceMetrics:
     total_employees: int
     messages_per_person: float
     date_range_days: int
-    coverage_by_function: Dict[str, float]  # {"Engineering": 0.85, "Finance": 0.15}
-    coverage_by_level: Dict[str, float] # {"C-Suite": 0.95, "IC": 0.40}
+    coverage_by_function: Dict[str, float]  
+    coverage_by_level: Dict[str, float]
     confidence_breakdown: Dict[str, float]
     strengths_detected: List[str]
     limitations_detected: List[str]
@@ -44,10 +44,8 @@ class ConfidenceMetrics:
         - Time range (longer = more patterns)
         - Employee-to-message ratio
         """
-        # Messages per person: ideal is 10+
         volume_score = min(self.messages_per_person / 10, 1.0)
         
-        # Coverage balance: penalty for functions with <30% coverage
         func_scores = list(self.coverage_by_function.values())
         if func_scores:
             well_covered = sum(1 for s in func_scores if s >= 0.3)
@@ -55,14 +53,9 @@ class ConfidenceMetrics:
         else:
             coverage_balance = 0
         
-        # Time range: ideal is 30+ days
         time_score = min(self.date_range_days / 30, 1.0)
-        
-        # If very few messages, cap confidence
         if self.total_messages < 20:
             volume_score *= 0.5
-        
-        # Weighted average
         confidence = (volume_score * 0.4 + coverage_balance * 0.35 + time_score * 0.25)
         return max(0, min(confidence, 1.0))
     
@@ -72,7 +65,6 @@ class ConfidenceMetrics:
         """
 
         volume_score = min(self.messages_per_person / 10, 1.0)
-
         func_scores = list(self.coverage_by_function.values())
 
         if func_scores:
@@ -95,99 +87,79 @@ class ConfidenceMetrics:
         """
 
         strengths = []
-
         if self.total_messages >= 50:
             strengths.append(
                 f"Message volume is reasonably strong ({self.total_messages} messages)"
             )
-
         if self.messages_per_person >= 5:
             strengths.append(
                 f"Healthy communication density ({self.messages_per_person:.1f} msgs/person)"
             )
-
         if self.date_range_days >= 30:
             strengths.append(
                 f"Time coverage spans {self.date_range_days} days"
             )
-
         if len(self.coverage_by_function) >= 3:
             strengths.append(
                 "Multiple departments represented in analysis"
             )
-
         return strengths
     
     def get_limitations(self) -> List[str]:
         """
         Explain what weakens confidence.
         """
-
         limitations = []
-
         if self.total_messages < 50:
             limitations.append(
                 "Limited message volume reduces statistical reliability"
             )
-
         if self.messages_per_person < 3:
             limitations.append(
                 "Low communication density may hide patterns"
             )
-
         if self.date_range_days < 15:
             limitations.append(
                 "Short observation window limits trend detection"
             )
-
         low_coverage = [
             func
             for func, pct in self.coverage_by_function.items()
             if pct < 0.15
         ]
-
         if low_coverage:
             limitations.append(
                 f"Underrepresented departments: {', '.join(low_coverage)}"
             )
-
         return limitations
-    
     def get_improvement_recommendations(self) -> List[str]:
         """
         Tell user how to improve future confidence.
         """
-
         recs = []
-
         if self.total_messages < 100:
             recs.append(
                 "Collect more communication samples across teams"
             )
-
         if self.date_range_days < 30:
             recs.append(
                 "Analyze at least 30 days of organizational activity"
             )
-
         if self.messages_per_person < 5:
             recs.append(
                 "Increase participation coverage across employees"
             )
-
         sparse_functions = [
             func
             for func, pct in self.coverage_by_function.items()
             if pct < 0.3
         ]
-
         if sparse_functions:
             recs.append(
                 f"Increase representation from: {', '.join(sparse_functions)}"
             )
-
         return recs
-    
+
     @property
     def overall_confidence(self) -> str:
         """Return confidence level as enum string."""
@@ -230,7 +202,6 @@ class ConfidenceMetrics:
         if self.date_range_days < 15:
             warnings.append(f"⚠️ Short time range ({self.date_range_days} days). Patterns need 30+ days to be reliable.")
         
-        # Check for severely undercovered functions
         for func, coverage in self.coverage_by_function.items():
             if coverage < 0.15:
                 warnings.append(f"⚠️ {func}: Only {coverage*100:.0f}% coverage. Conclusions unreliable.")
@@ -243,17 +214,13 @@ class SignalFinding:
     A single finding with confidence baked in.
     Never report without confidence level.
     """
-    signal_name: str              # e.g., "approval_bottleneck"
+    signal_name: str              
     signal_strength: SignalStrength
     observed_value: float
     confidence_level: ConfidenceLevel
-    confidence_pct: float         # 0-100
-    
-    # Evidence
-    evidence_count: int           # How many data points
-    min_evidence_for_action: int  # How many needed to be >65%
-    
-    # Narrative
+    confidence_pct: float         
+    evidence_count: int          
+    min_evidence_for_action: int  
     description: str
     recommendation: str
     
@@ -304,12 +271,10 @@ class ConfidenceCalculator:
         total_messages = ml_signals.get("message_count", 0)
         total_employees = ml_signals.get("employee_count", 0)
         messages_per_person = total_messages / max(total_employees, 1)
-        
-        # Extract date range
         date_range = ml_signals.get("date_range") or {}
         start_str = date_range.get("start")
         end_str = date_range.get("end")
-        date_range_days = 30  # default
+        date_range_days = 30 
         
         if start_str and end_str:
             try:
@@ -320,7 +285,6 @@ class ConfidenceCalculator:
             except:
                 pass
         
-        # Coverage by function (department)
         person_signals = (ml_signals or {}).get("person_signals") or {}
         dept_coverage = {}
         if person_signals:
@@ -334,8 +298,6 @@ class ConfidenceCalculator:
             
             for dept, count in by_dept.items():
                 dept_coverage[dept] = count / total if total > 0 else 0
-        
-        # Coverage by level
         level_coverage = {}
         if person_signals:
             total = len(person_signals)
