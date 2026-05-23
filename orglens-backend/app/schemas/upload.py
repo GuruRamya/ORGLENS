@@ -12,7 +12,6 @@ class UploadType(str, enum.Enum):
     SLACK_EXPORT = "slack_export"
     NARRATIVE_TEXT = "narrative_text"
 
-
 class UploadResponse(BaseModel):
     upload_id: str
     org_id: UUID
