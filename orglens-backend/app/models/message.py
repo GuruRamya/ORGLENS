@@ -18,32 +18,23 @@ class Message(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
-
-    # Message data
     source: Mapped[MessageSource] = mapped_column(SAEnum(MessageSource), nullable=False)
-    external_id: Mapped[str | None] = mapped_column(String(255))  # Slack ts, Gmail message id
+    external_id: Mapped[str | None] = mapped_column(String(255))  
     sender_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"))
-    sender_raw: Mapped[str | None] = mapped_column(String(255))   # raw name/email before resolution
+    sender_raw: Mapped[str | None] = mapped_column(String(255))  
     channel_or_thread: Mapped[str | None] = mapped_column(String(255))
     content: Mapped[str] = mapped_column(Text, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-
-    # NLP extracted fields
     contains_decision: Mapped[bool | None] = mapped_column(default=False)
     contains_objection: Mapped[bool | None] = mapped_column(default=False)
-    sentiment_score: Mapped[float | None] = mapped_column(Float)   # -1 to 1
-    urgency_score: Mapped[float | None] = mapped_column(Float)     # 0-1
-    decision_keywords: Mapped[list | None] = mapped_column(JSON)   # ["approved", "rejected", ...]
-    topics: Mapped[list | None] = mapped_column(JSON)              # ["hiring", "budget", ...]
-    influence_signal: Mapped[float | None] = mapped_column(Float)  # 0-1, how influential is this message?
-
-    # Metadata
+    sentiment_score: Mapped[float | None] = mapped_column(Float)   
+    urgency_score: Mapped[float | None] = mapped_column(Float)    
+    decision_keywords: Mapped[list | None] = mapped_column(JSON)   
+    topics: Mapped[list | None] = mapped_column(JSON)              
+    influence_signal: Mapped[float | None] = mapped_column(Float)  
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-    # Relationships
     organization: Mapped["Organization"] = relationship("Organization", back_populates="messages")
     sender: Mapped["Employee | None"] = relationship("Employee", foreign_keys=[sender_id])
-
 
 class DecisionStatus(str, enum.Enum):
     PROPOSED = "proposed"
@@ -58,31 +49,19 @@ class Decision(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
-
-    # Decision data
-    title: Mapped[str] = mapped_column(String(500), nullable=False)   # NLP-extracted summary
-    domain: Mapped[str | None] = mapped_column(String(100))           # hiring, budget, product, process
+    title: Mapped[str] = mapped_column(String(500), nullable=False)   
+    domain: Mapped[str | None] = mapped_column(String(100))           
     status: Mapped[DecisionStatus] = mapped_column(SAEnum(DecisionStatus), nullable=False)
     proposed_at: Mapped[datetime | None] = mapped_column(DateTime)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime)
-    resolution_days: Mapped[float | None] = mapped_column(Float)       # days to decision
-
-    # Who was involved (stored as JSON lists of employee IDs)
+    resolution_days: Mapped[float | None] = mapped_column(Float)      
     proposer_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("employees.id"))
-    supporters: Mapped[list | None] = mapped_column(JSON)    # [employee_id, ...]
-    objectors: Mapped[list | None] = mapped_column(JSON)     # [employee_id, ...]
-    deciders: Mapped[list | None] = mapped_column(JSON)      # who actually made the call
-
-    # Influence metrics
-    followed_objector: Mapped[bool | None] = mapped_column()  # did the final decision follow objectors?
-    power_play_score: Mapped[float | None] = mapped_column(Float)  # 0-1, was this a power play vs. genuine conviction?
-
-    # Source messages that led to this decision
+    supporters: Mapped[list | None] = mapped_column(JSON)    
+    objectors: Mapped[list | None] = mapped_column(JSON)    
+    deciders: Mapped[list | None] = mapped_column(JSON)      
+    followed_objector: Mapped[bool | None] = mapped_column()  
+    power_play_score: Mapped[float | None] = mapped_column(Float)  
     source_message_ids: Mapped[list | None] = mapped_column(JSON)
-
-    # Metadata
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-    # Relationships
     organization: Mapped["Organization"] = relationship("Organization", back_populates="decisions")
     proposer: Mapped["Employee | None"] = relationship("Employee", foreign_keys=[proposer_id])
