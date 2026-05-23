@@ -18,11 +18,10 @@ class CoverageSchema(BaseModel):
     function: str
     coverage_pct: int
     confidence: str
-    status: str  # "good", "weak", "critical"
+    status: str  
 
 class DataQualityCardSchema(BaseModel):
-    """Response for the Data Quality & Confidence card."""
-    overall_confidence: str  # "low", "medium", "high", etc.
+    overall_confidence: str 
     overall_confidence_pct: int
     total_messages: int
     total_employees: int
@@ -31,17 +30,14 @@ class DataQualityCardSchema(BaseModel):
     reasoning: list[str] = []
     weak_areas: list[dict] = []
     
-    # Coverage
-    coverage_by_function: Dict[str, int]  # {"Engineering": 85, "Finance": 15}
-    coverage_by_level: Dict[str, int]     # {"C-Suite": 95, "IC": 40}
     
-    # Data quality warnings
+    coverage_by_function: Dict[str, int]  
+    coverage_by_level: Dict[str, int]     
+    
     warnings: List[str]
     
-    # Findings that need more data
     signals_pending_data: List[SignalFindingSchema]
     
-    # Overall assessment
     data_sufficiency_summary: str
     recommendation: str
 
