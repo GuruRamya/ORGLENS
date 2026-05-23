@@ -7,14 +7,14 @@ from typing import List
 from enum import Enum
 
 class OrgArchetype(str, Enum):
-    FAST_AND_POLITICAL = "fast_and_political"      # Fast velocity, high politics
-    SLOW_BUT_HEALTHY = "slow_but_healthy"          # Slow velocity, high trust
-    CHAOTIC_STARTUP = "chaotic_startup"            # Low structure, high energy
-    WAITING_FOR_EXODUS = "waiting_for_exodus"      # Low health, high attrition risk
-    HIGH_PERFORMANCE = "high_performance"          # Fast & healthy (rare)
-    BUREAUCRATIC = "bureaucratic"                  # Slow & political
-    FRAGMENTED = "fragmented"                      # Low trust, low cohesion
-    STABLE_MATURE = "stable_mature"                # Stable, not growing
+    FAST_AND_POLITICAL = "fast_and_political"     
+    SLOW_BUT_HEALTHY = "slow_but_healthy"         
+    CHAOTIC_STARTUP = "chaotic_startup"            
+    WAITING_FOR_EXODUS = "waiting_for_exodus"      
+    HIGH_PERFORMANCE = "high_performance"          
+    BUREAUCRATIC = "bureaucratic"                  
+    FRAGMENTED = "fragmented"                      
+    STABLE_MATURE = "stable_mature"               
 
 @dataclass
 class ArchetypeProfile:
@@ -27,14 +27,11 @@ class ArchetypeProfile:
     strengths: List[str]
     vulnerabilities: List[str]
     recommended_focus: List[str]
-
     confidence_pct: int
-
-    # NEW
     classification_reasons: List[str]
     supporting_metrics: dict
     risk_level: str
-    trajectory: str   # improving / declining / stable
+    trajectory: str   
 
     def to_dict(self) -> dict:
         return {
@@ -45,8 +42,6 @@ class ArchetypeProfile:
             "vulnerabilities": self.vulnerabilities,
             "recommended_focus": self.recommended_focus,
             "confidence_pct": self.confidence_pct,
-
-            # NEW
             "classification_reasons": self.classification_reasons,
             "supporting_metrics": self.supporting_metrics,
             "risk_level": self.risk_level,
@@ -59,8 +54,6 @@ class ArchetypeClassifier:
     def __init__(self, ml_signals: dict, contradictions: List = None):
         self.ml_signals = ml_signals
         self.contradictions = contradictions or []
-        
-        # Extract key metrics
         self.velocity_score = ml_signals.get("avg_decision_days", 14)
         self.trust_score = 10 - ml_signals.get("trust_gap_score", 5)
         self.health_score = ml_signals.get("org_health_score", 5)
@@ -69,15 +62,12 @@ class ArchetypeClassifier:
     
     def classify(self) -> ArchetypeProfile:
         """Determine org archetype."""
-        
-        # Define decision boundaries
-        fast = self.velocity_score < 10        # < 10 days = fast
-        healthy = self.health_score > 6.5      # > 6.5 = healthy
-        trusted = self.trust_score > 6         # > 6 = trusted
-        resilient = self.resilience_score > 6  # > 6 = resilient
+        fast = self.velocity_score < 10        
+        healthy = self.health_score > 6.5      
+        trusted = self.trust_score > 6         
+        resilient = self.resilience_score > 6 
         attrition_risk = self.attrition_risk > 2
         
-        # Classify based on combinations
         if fast and healthy and trusted and resilient:
             return self._high_performance()
         
