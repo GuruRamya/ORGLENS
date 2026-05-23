@@ -61,10 +61,6 @@ async def me(current_user: User = Depends(get_current_user)):
 
 @router.get("/slack/authorize")
 async def slack_authorize(org_id: str):
-    """
-    Redirect user to Slack OAuth authorization.
-    Returns the authorization URL.
-    """
     slack_auth_url = (
         f"https://slack.com/oauth/v2/authorize?"
         f"client_id={settings.slack_client_id}&"
@@ -77,18 +73,12 @@ async def slack_authorize(org_id: str):
 
 @router.get("/slack/callback")
 async def slack_callback(code: str = Query(...), state: str = Query(...), db: AsyncSession = Depends(get_db)):
-    """
-    Slack OAuth callback. Exchange code for access token and save to org.
-    """
     if not code or not state:
-        # Redirect to upload page with error
         return RedirectResponse(
             url=f"{settings.frontend_url}/org/{state}/upload?error=slack_auth_failed",
             status_code=302
         )
-
     try:
-        # Exchange code for token
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://slack.com/api/oauth.v2.access",
@@ -110,31 +100,21 @@ async def slack_callback(code: str = Query(...), state: str = Query(...), db: As
 
         access_token = data.get("access_token")
         org_id = state
-
-        # Save token to organization
         result = await db.execute(select(Organization).where(Organization.id == org_id))
         org = result.scalar_one_or_none()
-
         if not org:
             return RedirectResponse(
                 url=f"{settings.frontend_url}/org/{org_id}/upload?error=org_not_found",
                 status_code=302
             )
-
         org.slack_access_token = access_token
         org.slack_connected = True
         await db.commit()
-
-        logger.info(f"✅ Slack connected for org: {org.name}")
-
-        # ✅ Redirect back to upload page with success
         return RedirectResponse(
             url=f"{settings.frontend_url}/org/{org_id}/upload?success=slack_connected",
             status_code=302
         )
-
     except Exception as e:
-        logger.error(f"Slack callback error: {str(e)}")
         return RedirectResponse(
             url=f"{settings.frontend_url}/org/{state}/upload?error=callback_error",
             status_code=302
@@ -143,10 +123,6 @@ async def slack_callback(code: str = Query(...), state: str = Query(...), db: As
 
 @router.get("/gmail/authorize")
 async def gmail_authorize(org_id: str):
-    """
-    Redirect user to Google OAuth authorization for Gmail.
-    Returns the authorization URL.
-    """
     gmail_auth_url = (
         f"https://accounts.google.com/o/oauth2/v2/auth?"
         f"client_id={settings.google_client_id}&"
@@ -161,9 +137,6 @@ async def gmail_authorize(org_id: str):
 
 @router.get("/gmail/callback")
 async def gmail_callback(code: str = Query(...), state: str = Query(...), db: AsyncSession = Depends(get_db)):
-    """
-    Google OAuth callback. Exchange code for access token and save to org.
-    """
     if not code or not state:
         return RedirectResponse(
             url=f"{settings.frontend_url}/org/{state}/upload?error=gmail_auth_failed",
@@ -171,7 +144,6 @@ async def gmail_callback(code: str = Query(...), state: str = Query(...), db: As
         )
 
     try:
-        # Exchange code for token
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "https://oauth2.googleapis.com/token",
@@ -184,9 +156,7 @@ async def gmail_callback(code: str = Query(...), state: str = Query(...), db: As
                 },
             )
             data = response.json()
-
         if "error" in data:
-            logger.error(f"Google OAuth failed: {data.get('error')}")
             return RedirectResponse(
                 url=f"{settings.frontend_url}/org/{state}/upload?error={data.get('error')}",
                 status_code=302
@@ -194,8 +164,6 @@ async def gmail_callback(code: str = Query(...), state: str = Query(...), db: As
 
         access_token = data.get("access_token")
         org_id = state
-
-        # Save token to organization
         result = await db.execute(select(Organization).where(Organization.id == org_id))
         org = result.scalar_one_or_none()
 
@@ -208,17 +176,11 @@ async def gmail_callback(code: str = Query(...), state: str = Query(...), db: As
         org.gmail_access_token = access_token
         org.gmail_connected = True
         await db.commit()
-
-        logger.info(f"✅ Gmail connected for org: {org.name}")
-
-        # ✅ Redirect back to upload page with success
         return RedirectResponse(
             url=f"{settings.frontend_url}/org/{org_id}/upload?success=gmail_connected",
             status_code=302
         )
-
     except Exception as e:
-        logger.error(f"Gmail callback error: {str(e)}")
         return RedirectResponse(
             url=f"{settings.frontend_url}/org/{state}/upload?error=callback_error",
             status_code=302
@@ -227,33 +189,24 @@ async def gmail_callback(code: str = Query(...), state: str = Query(...), db: As
 
 @router.post("/disconnect/slack/{org_id}")
 async def disconnect_slack(org_id: str, db: AsyncSession = Depends(get_db)):
-    """Disconnect Slack from organization"""
     result = await db.execute(select(Organization).where(Organization.id == org_id))
     org = result.scalar_one_or_none()
-
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
-
     org.slack_access_token = None
     org.slack_connected = False
     await db.commit()
-
-    logger.info(f"✅ Slack disconnected for org: {org.name}")
     return {"status": "success", "message": "Slack disconnected"}
 
 
 @router.post("/disconnect/gmail/{org_id}")
 async def disconnect_gmail(org_id: str, db: AsyncSession = Depends(get_db)):
-    """Disconnect Gmail from organization"""
     result = await db.execute(select(Organization).where(Organization.id == org_id))
     org = result.scalar_one_or_none()
-
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
 
     org.gmail_access_token = None
     org.gmail_connected = False
     await db.commit()
-
-    logger.info(f"✅ Gmail disconnected for org: {org.name}")
     return {"status": "success", "message": "Gmail disconnected"}
