@@ -25,7 +25,7 @@ class UploadResponse(BaseModel):
 class FileUploadStatus(BaseModel):
     org_id: UUID
     file_type: UploadType
-    status: str  # pending | processing | completed | failed
+    status: str 
     progress_percent: int
     message: Optional[str] = None
     created_at: datetime
