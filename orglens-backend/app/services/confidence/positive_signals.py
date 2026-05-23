@@ -21,11 +21,11 @@ class PositiveSignal:
     """A strength or positive dynamic detected."""
     category: StrengthCategory
     description: str
-    strength_score: float  # 0-10
+    strength_score: float 
     evidence: List[str]
-    affected_people: int  # Anonymized count
+    affected_people: int  
     affected_functions: List[str]
-    growth_potential: str  # "high", "medium", "low"
+    growth_potential: str  
     confidence_pct: float = 0
     
 class PositiveSignalDetector:
@@ -45,12 +45,9 @@ class PositiveSignalDetector:
         signals.extend(self._detect_collaboration_zones())
         if len(signals) == 0:
             signals.extend(self._generate_fallback_strengths())
-
-        # If still weak, supplement with fallback positives
         elif len(signals) < 2:
             signals.extend(self._generate_fallback_strengths()[:1])
 
-        # Remove duplicates by description
         unique = []
         seen = set()
 
@@ -64,8 +61,6 @@ class PositiveSignalDetector:
     def _detect_resilient_teams(self) -> List[PositiveSignal]:
         """Teams that handle crises without escalating."""
         signals = []
-        
-        # Look for teams with high sentiment + low escalation
         team_health = {}
         for person_id, psig in self.person_signals.items():
             team = psig.get("team", "Unknown")
@@ -135,8 +130,6 @@ class PositiveSignalDetector:
         fallback = []
 
         total_people = len(self.person_signals)
-
-        # People still communicating = positive
         if total_people > 0:
             fallback.append(
                 PositiveSignal(
@@ -154,8 +147,6 @@ class PositiveSignalDetector:
                     growth_potential="medium"
                 )
             )
-
-        # Escalations mean people still care
         escalation_rate = self.ml_signals.get("ml_signals", {}).get("escalation_rate", 0)
 
         if escalation_rate > 0:
@@ -176,7 +167,6 @@ class PositiveSignalDetector:
                 )
             )
 
-        # Fast orgs usually have execution energy
         avg_decision_days = self.ml_signals.get("avg_decision_days", 14)
 
         if avg_decision_days < 10:
@@ -203,8 +193,6 @@ class PositiveSignalDetector:
     def _detect_trust_clusters(self) -> List[PositiveSignal]:
         """Groups of people who naturally work well together."""
         signals = []
-        
-        # Look for communication clusters with high trust
         collaboration_pairs = self.ml_signals.get("high_trust_pairs", [])
         
         if collaboration_pairs:
@@ -228,12 +216,10 @@ class PositiveSignalDetector:
     def _detect_velocity_hotspots(self) -> List[PositiveSignal]:
         """Areas where decisions actually move fast."""
         signals = []
-        
-        # Look for teams/functions with fast decision cycles
         domain_velocities = self.ml_signals.get("domain_velocities", {})
         
         for domain, velocity_score in domain_velocities.items():
-            if velocity_score > 7.5:  # High velocity
+            if velocity_score > 7.5: 
                 signals.append(PositiveSignal(
                     category=StrengthCategory.VELOCITY_HOTSPOTS,
                     description=f"{domain}: decisions move quickly here",
@@ -269,7 +255,7 @@ class PositiveSignalDetector:
                         "Positive tone in interactions",
                         "Aligned goals and outcomes"
                     ],
-                    affected_people=0,  # Cross-functional
+                    affected_people=0,  
                     affected_functions=pair.split(" ↔ "),
                     growth_potential="high"
                 ))
