@@ -5,8 +5,6 @@ from typing import Optional
 import enum
 
 
-# ─── Organization ────────────────────────────────────────────────────────────
-
 class OrgCreate(BaseModel):
     name: str
     industry: Optional[str] = None
@@ -26,15 +24,13 @@ class OrgResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─── Employee ────────────────────────────────────────────────────────────────
-
 class EmployeeCreate(BaseModel):
     name: str
     email: Optional[str] = None
     title: Optional[str] = None
     department: Optional[str] = None
     level: Optional[str] = None
-    manager_name: Optional[str] = None   # resolved to manager_id during ingestion
+    manager_name: Optional[str] = None   
     tenure_months: Optional[int] = None
 
 
@@ -51,8 +47,6 @@ class EmployeeResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
-
-# ─── Upload ──────────────────────────────────────────────────────────────────
 
 class UploadType(str, enum.Enum):
     ZIP = "zip"
@@ -71,8 +65,6 @@ class UploadResponse(BaseModel):
     message: str
 
 
-# ─── Analysis ────────────────────────────────────────────────────────────────
-
 class AnalysisTriggerResponse(BaseModel):
     analysis_id: UUID
     org_id: UUID
@@ -90,19 +82,16 @@ class AnalysisStatusResponse(BaseModel):
     completed_at: Optional[datetime]
 
 
-# ─── Dashboard Card Schemas ───────────────────────────────────────────────────
-# These are what the frontend gets for each dashboard card.
-
 class OrgHealthCard(BaseModel):
     org_health_score: float
     health_breakdown: dict
-    grade: str          # A/B/C/D/F based on score
+    grade: str         
     summary: str
 
 
 class TrustGapCard(BaseModel):
     trust_gap_score: float
-    severity: str       # low/medium/high/critical
+    severity: str       
     claims_analyzed: int
     top_gaps: list[dict]
     trend: str
@@ -112,7 +101,7 @@ class PowerStructureCard(BaseModel):
     nodes: list[dict]
     edges: list[dict]
     clusters: list[dict]
-    hidden_powers: int   # count of people with informal authority > formal
+    hidden_powers: int  
     ignored_authorities: int
 
 
@@ -136,7 +125,7 @@ class ResilienceCard(BaseModel):
 
 class DecisionVelocityCard(BaseModel):
     avg_days: float
-    benchmark: str      # fast/normal/slow/critical
+    benchmark: str      
     trend: str
     trend_data: list[dict]
     bottlenecks: list[dict]
@@ -158,7 +147,7 @@ class PredictionsCard(BaseModel):
 
 class RecommendationsCard(BaseModel):
     recommendations: list[dict]
-    quick_wins: list[dict]    # high impact, low effort
+    quick_wins: list[dict]   
     total_potential_savings: Optional[str]
 
 
@@ -171,7 +160,7 @@ class FullDashboardResponse(BaseModel):
     decisions_extracted: int
     date_range: dict
 
-    # All 10 cards
+  
     org_health: OrgHealthCard
     trust_gap: TrustGapCard
     power_structure: PowerStructureCard
