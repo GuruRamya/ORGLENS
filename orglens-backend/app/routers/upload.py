@@ -18,13 +18,11 @@ from app.models.auth import User
 
 router = APIRouter()
 
-# Initialize parsers and clients
 zip_parser = ZipParser()
 single_parser = SingleFileParser()
 
 
 def ensure_upload_dir():
-    """Ensure upload directory exists"""
     Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
 
 
@@ -35,36 +33,26 @@ async def upload_zip(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> UploadResponse:
-    """
-    Upload a ZIP file containing CSV + Slack + Gmail exports.
-    Parses and ingests all data.
-    """
     ensure_upload_dir()
 
-    # Verify org exists
     result = await db.execute(select(Organization).where(Organization.id == org_id))
     org = result.scalar_one_or_none()
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
 
     try:
-        # Save uploaded file temporarily
         file_path = Path(settings.upload_dir) / f"{uuid4()}_{file.filename}"
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
 
-        # Parse ZIP
         with open(file_path, "rb") as f:
             ingestion_result = zip_parser.parse(f, file.filename)
 
-        # Store data in database
         await _ingest_parsed_data(org_id, ingestion_result, db)
 
-        # Clean up temp file
         file_path.unlink(missing_ok=True)
 
-        logger.info(f"✅ ZIP uploaded for org {org.name}: {len(ingestion_result.messages)} messages, {len(ingestion_result.employees)} employees")
 
         return UploadResponse(
             upload_id=str(uuid4()),
@@ -76,7 +64,6 @@ async def upload_zip(
         )
 
     except Exception as e:
-        logger.error(f"ZIP upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -107,8 +94,6 @@ async def upload_employee_csv(
         await _ingest_employees(org_id, ingestion_result.employees, db)
         file_path.unlink(missing_ok=True)
 
-        logger.info(f"✅ Employee CSV uploaded for org {org.name}: {len(ingestion_result.employees)} employees")
-
         return UploadResponse(
             upload_id=str(uuid4()),
             org_id=org_id,
@@ -119,7 +104,6 @@ async def upload_employee_csv(
         )
 
     except Exception as e:
-        logger.error(f"CSV upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -131,7 +115,6 @@ async def upload_slack_export(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> UploadResponse:
-    """Upload Slack export JSON for a specific channel"""
     ensure_upload_dir()
 
     result = await db.execute(select(Organization).where(Organization.id == org_id))
@@ -151,8 +134,6 @@ async def upload_slack_export(
         await _ingest_parsed_data(org_id, ingestion_result, db)
         file_path.unlink(missing_ok=True)
 
-        logger.info(f"✅ Slack export uploaded for org {org.name}: {len(ingestion_result.messages)} messages")
-
         return UploadResponse(
             upload_id=str(uuid4()),
             org_id=org_id,
@@ -163,7 +144,6 @@ async def upload_slack_export(
         )
 
     except Exception as e:
-        logger.error(f"Slack export upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/gmail-export")
@@ -173,7 +153,6 @@ async def upload_gmail_export(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> UploadResponse:
-    """Upload Gmail export (.mbox)"""
     ensure_upload_dir()
 
     result = await db.execute(
@@ -185,27 +164,19 @@ async def upload_gmail_export(
         raise HTTPException(status_code=404, detail="Organization not found")
 
     try:
-        # Save uploaded file temporarily
         file_path = Path(settings.upload_dir) / f"{uuid4()}_{file.filename}"
 
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
 
-        # Parse Gmail export
         with open(file_path, "rb") as f:
             ingestion_result = single_parser.parse_gmail_export(f)
 
-        # Store in DB
         await _ingest_parsed_data(org_id, ingestion_result, db)
 
-        # Cleanup
         file_path.unlink(missing_ok=True)
 
-        logger.info(
-            f"✅ Gmail export uploaded for org {org.name}: "
-            f"{len(ingestion_result.messages)} emails"
-        )
 
         return UploadResponse(
             upload_id=str(uuid4()),
@@ -217,16 +188,11 @@ async def upload_gmail_export(
         )
 
     except Exception as e:
-        logger.error(f"Gmail export upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
 
 @router.post("/sync-slack/{org_id}")
 async def sync_slack_data(org_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)) -> UploadResponse:
-    """
-    Connect to Slack API and pull live data.
-    Requires slack_access_token to be saved in organization.
-    """
     result = await db.execute(select(Organization).where(Organization.id == org_id))
     org = result.scalar_one_or_none()
     if not org:
@@ -240,9 +206,6 @@ async def sync_slack_data(org_id: str, db: AsyncSession = Depends(get_db), curre
         ingestion_result = await slack_client.fetch_all_data()
 
         await _ingest_parsed_data(str(org.id), ingestion_result, db)
-
-        logger.info(f"✅ Slack data synced for org {org.name}: {len(ingestion_result.messages)} messages")
-
         return UploadResponse(
             upload_id=str(uuid4()),
             org_id=str(org.id),
@@ -253,16 +216,11 @@ async def sync_slack_data(org_id: str, db: AsyncSession = Depends(get_db), curre
         )
 
     except Exception as e:
-        logger.error(f"Slack sync error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/sync-gmail/{org_id}")
 async def sync_gmail_data(org_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)) -> UploadResponse:
-    """
-    Connect to Gmail API and pull live email data.
-    Requires gmail_access_token to be saved in organization.
-    """
     result = await db.execute(select(Organization).where(Organization.id == org_id))
     org = result.scalar_one_or_none()
     if not org:
@@ -277,8 +235,6 @@ async def sync_gmail_data(org_id: str, db: AsyncSession = Depends(get_db), curre
 
         await _ingest_parsed_data(str(org.id), ingestion_result, db)
 
-        logger.info(f"✅ Gmail data synced for org {org.name}: {len(ingestion_result.messages)} emails")
-
         return UploadResponse(
             upload_id=str(uuid4()),
             org_id=str(org.id),
@@ -289,11 +245,7 @@ async def sync_gmail_data(org_id: str, db: AsyncSession = Depends(get_db), curre
         )
 
     except Exception as e:
-        logger.error(f"Gmail sync error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async def _ingest_parsed_data(org_id: str, ingestion_result, db: AsyncSession ):
     """Store parsed employees and messages in database"""
@@ -304,13 +256,10 @@ async def _ingest_parsed_data(org_id: str, ingestion_result, db: AsyncSession ):
 async def _ingest_employees(org_id: str, employees, db: AsyncSession):
     from uuid import UUID
     
-    logger.info(f"_ingest_employees called with {len(employees)} employees for org {org_id}")
     
     raw = [vars(e) if not isinstance(e, dict) else e for e in employees]
     deduped = deduplicate_employees(raw)
-    
-    logger.info(f"After dedup: {len(deduped)} employees")
-    
+        
     org_id_uuid = UUID(org_id)
     
     count = 0
@@ -323,7 +272,6 @@ async def _ingest_employees(org_id: str, employees, db: AsyncSession):
                 )
             )
             if existing.scalar_one_or_none():
-                logger.info(f"  Skipping {parsed_emp.get('name')} (already exists)")
                 continue
 
         emp = Employee(
@@ -338,18 +286,14 @@ async def _ingest_employees(org_id: str, employees, db: AsyncSession):
         db.add(emp)
         count += 1
 
-    logger.info(f"About to commit {count} new employees")
     await db.commit()
-    logger.info(f"✅ Committed {count} employees to database")
 
 async def _ingest_messages(org_id: str, messages, db: AsyncSession):
-    """Store messages in database"""
     from uuid import UUID
     from app.models import MessageSource
     org_id_uuid = UUID(org_id)
 
     for parsed_msg in messages:
-        # Skip if message already exists
         existing = await db.execute(
             select(Message).where(
                 (Message.org_id == UUID(org_id)) & 
@@ -360,7 +304,6 @@ async def _ingest_messages(org_id: str, messages, db: AsyncSession):
         if existing.scalar_one_or_none():
             continue
 
-        # Resolve sender
         sender_id = None
         if parsed_msg.sender_raw:
             sender_result = await db.execute(
