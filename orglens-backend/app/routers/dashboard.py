@@ -26,7 +26,6 @@ from app.schemas.analysis import (
 
 router = APIRouter()
 
-# At the top of get_dashboard_report, add this helper:
 def _parse_json_field(field):
     """Handle both dict and string JSON fields"""
     if field is None:
@@ -46,18 +45,12 @@ async def get_dashboard_report(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get the full dashboard report for a completed analysis.
-    Returns all 10 cards with visualization data.
-    """
     result = await db.execute(
         select(AnalysisReport).where(AnalysisReport.id == analysis_id)
     )
     analysis = result.scalar_one_or_none()
-
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
-
     if analysis.status != AnalysisStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Analysis not completed yet")
     ps = _parse_json_field(analysis.power_structure)
@@ -70,8 +63,6 @@ async def get_dashboard_report(
     confidence_metrics = _parse_json_field(analysis.confidence_metrics)
     contradictions_raw = analysis.contradictions or []
     positive_signals_raw = analysis.positive_signals or []
-
-    # Get org name
     org_result = await db.execute(
         select(Organization).where(Organization.id == analysis.org_id)
     )
@@ -85,7 +76,6 @@ async def get_dashboard_report(
         },
     }
     metrics = ConfidenceCalculator.from_ml_signals(ml_signals)
-    
     confidence_metrics = {
         "overall_confidence": metrics.overall_confidence,
         "overall_confidence_pct": metrics.overall_confidence_pct,
@@ -162,8 +152,6 @@ async def get_dashboard_report(
         }
         for p in positive_signals_raw
     ]
-
-    # Build response with all cards
     try:
         dashboard = FullDashboardResponse(
             analysis_id=analysis.id,
@@ -176,14 +164,12 @@ async def get_dashboard_report(
                 "start": analysis.date_range_start.isoformat() if analysis.date_range_start else None,
                 "end": analysis.date_range_end.isoformat() if analysis.date_range_end else None,
             },
-            # CARD 1: Org Health
             org_health=OrgHealthCard(
                 org_health_score=analysis.org_health_score or 0,
                 health_breakdown=analysis.health_breakdown or {},
                 grade=_score_to_grade(analysis.org_health_score or 0),
                 summary=_generate_health_summary(analysis.org_health_score or 0, analysis.health_breakdown),
             ),
-            # CARD 2: Trust Gap
             trust_gap=TrustGapCard(
                 trust_gap_score=analysis.trust_gap_score or 0,
                 severity=_severity_level(analysis.trust_gap_score or 0),
@@ -191,7 +177,6 @@ async def get_dashboard_report(
                 top_gaps=_extract_top_gaps(trust_details),
                 trend=trust_details.get("trend", "stable"),
             ),
-            # CARD 3: Power Structure
             power_structure=PowerStructureCard(
                 nodes=ps.get("nodes", []),
                 edges=ps.get("edges", []),
@@ -199,25 +184,21 @@ async def get_dashboard_report(
                 hidden_powers=_count_hidden_powers(ps),
                 ignored_authorities=_count_ignored_authorities(ps),
             ),
-            # CARD 4: Top Influencers
             top_influencers=InfluencerCard(
                 influencers=analysis.top_influencers or [],
                 total_analyzed=len(analysis.top_influencers) if analysis.top_influencers else 0,
             ),
-            # CARD 5: Gatekeepers
             gatekeepers=GatekeeperCard(
                 gatekeepers=analysis.gatekeepers or [],
                 decision_gatekeepers=_count_gatekeeper_type(analysis.gatekeepers, "decision"),
                 information_gatekeepers=_count_gatekeeper_type(analysis.gatekeepers, "information"),
             ),
-            # CARD 6: Resilience
             resilience=ResilienceCard(
                 resilience_score=analysis.resilience_score or 0,
                 risk_level=_resilience_to_risk(analysis.resilience_score or 0),
                 single_points_of_failure=analysis.resilience_details.get("single_points_of_failure", []) if analysis.resilience_details else [],
                 knowledge_silos=analysis.resilience_details.get("knowledge_silos", []) if analysis.resilience_details else [],
             ),
-            # CARD 7: Decision Velocity
             decision_velocity=DecisionVelocityCard(
                 avg_days=analysis.decision_velocity.get("avg_days", 0) if analysis.decision_velocity else 0,
                 benchmark=_velocity_benchmark(analysis.decision_velocity.get("avg_days", 0) if analysis.decision_velocity else 0),
@@ -225,14 +206,12 @@ async def get_dashboard_report(
                 trend_data=analysis.decision_velocity.get("trend_data", []) if analysis.decision_velocity else [],
                 bottlenecks=analysis.decision_velocity.get("bottleneck_persons", []) if analysis.decision_velocity else [],
             ),
-            # CARD 8: System Diagnosis
             system_diagnosis=DiagnosisCard(
                 root_causes=analysis.system_diagnosis.get("root_causes", []) if analysis.system_diagnosis else [],
                 who_profits=analysis.system_diagnosis.get("who_profits_from_gaps", []) if analysis.system_diagnosis else [],
                 predicted_if_unchanged=analysis.system_diagnosis.get("predicted_if_unchanged", "") if analysis.system_diagnosis else "",
                 dysfunction_cost_annual=analysis.system_diagnosis.get("dysfunction_cost_annual") if analysis.system_diagnosis else None,
             ),
-            # CARD 9: Predictions
             predictions=PredictionsCard(
                 attrition_risks=analysis.predictions.get("attrition_risk", []) if analysis.predictions else [],
                 decision_reversal_risks=analysis.predictions.get("decision_reversals", []) if analysis.predictions else [],
@@ -243,8 +222,6 @@ async def get_dashboard_report(
             positive_signals=positive_signals,
             archetype=archetype,
             confidence_metrics=confidence_metrics,
-            
-            # CARD 10: Recommendations
             recommendations=RecommendationsCard(
                 recommendations=analysis.recommendations or [],
                 quick_wins=_extract_quick_wins(analysis.recommendations),
@@ -254,7 +231,6 @@ async def get_dashboard_report(
         return dashboard.model_dump()
 
     except Exception as e:
-        logger.error(f"Dashboard generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error generating dashboard: {str(e)}")
 
 
@@ -265,22 +241,14 @@ async def get_dashboard_card(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get a specific card from the dashboard (for lazy loading).
-    card_type: org_health, trust_gap, power_structure, influencers, gatekeepers,
-               resilience, decision_velocity, diagnosis, predictions, recommendations
-    """
     result = await db.execute(
         select(AnalysisReport).where(AnalysisReport.id == analysis_id)
     )
     analysis = result.scalar_one_or_none()
-
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
-
     if analysis.status != AnalysisStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Analysis not completed yet")
-
     card_mapping = {
         "org_health": lambda: {
             "org_health_score": analysis.org_health_score or 0,
@@ -345,11 +313,9 @@ async def get_dashboard_card(
 
     if card_type not in card_mapping:
         raise HTTPException(status_code=400, detail=f"Unknown card type: {card_type}")
-
     try:
         return card_mapping[card_type]()
     except Exception as e:
-        logger.error(f"Card generation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/card/{analysis_id}/data-quality")
@@ -358,25 +324,16 @@ async def get_data_quality_card(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Get the Data Quality & Confidence card.
-    Shows: data sufficiency, coverage, warnings, next steps.
-    """
     from uuid import UUID
-    
-    # Load analysis report
-    result = await db.execute(
+        result = await db.execute(
         select(AnalysisReport).where(AnalysisReport.id == UUID(analysis_id))
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found")
-    
-    # Reconstruct ML signals (you'd have these stored or re-compute)
-    # For now, assume you have a way to get them
     ml_signals = {
         "message_count": analysis.messages_analyzed or 0,
-        "employee_count": 0,  # You'd need to load this
+        "employee_count": 0,  
         "person_signals": {},
         "date_range": {
             "start": analysis.date_range_start.isoformat() if analysis.date_range_start else None,
@@ -384,14 +341,11 @@ async def get_data_quality_card(
         }
     }
     metrics = ConfidenceCalculator.from_ml_signals(ml_signals)
-    # Calculate confidence
     confidence_metrics = ConfidenceCalculator.from_ml_signals(ml_signals)
     conf_level = confidence_metrics.get_confidence_level()
     conf_pct = int(confidence_metrics.calculate_base_confidence() * 100)
     warnings = confidence_metrics.get_warnings()
-    
-    # Coverage percentages for display
-    coverage_func = {
+        coverage_func = {
         func: int(cov * 100)
         for func, cov in confidence_metrics.coverage_by_function.items()
     }
@@ -400,7 +354,6 @@ async def get_data_quality_card(
         for lvl, cov in confidence_metrics.coverage_by_level.items()
     }
     
-    # Build recommendation
     if conf_pct < 30:
         recommendation = "⚠️ CRITICAL: Data too limited. Collect more communication data (target: 100+ messages, 30+ days, balanced coverage across teams)."
     elif conf_pct < 50:
@@ -445,13 +398,11 @@ async def get_data_quality_card(
             }
         ] if conf_pct < 60 else [],
         warnings=warnings,
-        signals_pending_data=[],  # You'd populate this with actual pending signals
+        signals_pending_data=[],  
         data_sufficiency_summary=f"Analysis based on {confidence_metrics.total_messages} messages across {confidence_metrics.total_employees} people over {confidence_metrics.date_range_days} days.",
         recommendation=recommendation,
     )
 
-
-# ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _score_to_grade(score: float) -> str:
     if score >= 8.5: return "A"
@@ -551,7 +502,6 @@ async def classify_nodes(
     payload: dict,
     current_user: User = Depends(get_current_user)
 ):
-    """Classify power nodes using Groq — keeps API key server-side"""
     from groq import Groq
     import os, json
     
@@ -602,8 +552,6 @@ Return ONLY a valid JSON array, no markdown, no explanation:
         raw = response.choices[0].message.content.strip()
         raw = raw.replace("```json", "").replace("```", "").strip()
         classified = json.loads(raw)
-        
-        # Merge classifications back into nodes
         name_map = {c["name"].lower().strip(): c for c in classified}
         result = []
         for node in nodes:
@@ -616,7 +564,6 @@ Return ONLY a valid JSON array, no markdown, no explanation:
         return {"nodes": result}
     except Exception as e:
         logger.error(f"Node classification error: {e}")
-        # Fallback: return nodes with rule-based classification
         result = []
         for node in nodes:
             fa = node.get("formal_authority", 0)
@@ -640,7 +587,6 @@ async def chat_with_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """AI chat about analysis — keeps API key server-side"""
     from groq import Groq
     import os, json
     
