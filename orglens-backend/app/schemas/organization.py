@@ -5,8 +5,6 @@ from typing import Optional
 import enum
 
 
-# ─── Organization ────────────────────────────────────────────────────────────
-
 class OrgCreate(BaseModel):
     name: str
     industry: Optional[str] = None
@@ -26,15 +24,13 @@ class OrgResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# ─── Employee ────────────────────────────────────────────────────────────────
-
 class EmployeeCreate(BaseModel):
     name: str
     email: Optional[str] = None
     title: Optional[str] = None
     department: Optional[str] = None
     level: Optional[str] = None
-    manager_name: Optional[str] = None   # resolved to manager_id during ingestion
+    manager_name: Optional[str] = None  
     tenure_months: Optional[int] = None
 
 
