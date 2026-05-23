@@ -1,7 +1,4 @@
-"""
-Groq Narrator - takes ML signals and generates explanations/narratives.
-Groq ONLY explains what ML found. It cannot invent scores.
-"""
+
 import json
 import os
 from groq import Groq
@@ -88,10 +85,6 @@ GROQ_SCHEMA = {
 
 
 class GroqNarrator:
-    """
-    Uses Groq to generate narratives and explanations from ML signals.
-    Groq is FORBIDDEN from inventing scores — it must use ML-computed values.
-    """
 
     def __init__(self):
         api_key = os.getenv("GROQ_API_KEY")
@@ -101,55 +94,21 @@ class GroqNarrator:
         self.model = "llama-3.3-70b-versatile"
 
     def generate_analysis(self, ml_signals: dict) -> dict:
-        """
-        Two-call strategy:
-        Call 1: Generate all 9 analysis cards (org health through predictions)
-        Call 2: Generate recommendations based on Call 1 findings
-        """
         computed_scores = self._compute_scores_from_signals(ml_signals)
-
-        # Call 1: Core analysis
-        logger.info("Groq Call 1: Core analysis...")
         core_result = self._call_groq_core(ml_signals, computed_scores)
-
-        # Call 2: Recommendations based on findings
-        logger.info("Groq Call 2: Recommendations...")
         recommendations = self._call_groq_recommendations(ml_signals, computed_scores, core_result)
         core_result["recommendations"] = recommendations
-
-        # Call 3: Deep political/cultural reading
-        logger.info("Groq Call 3: Deep org intelligence...")
         deep_intel = self._call_groq_deep_intel(ml_signals, core_result)
         core_result["deep_intel"] = deep_intel
-
-        logger.info(
-            f"Final: influencers={len(core_result.get('top_influencers') or [])}, "
-            f"recommendations={len(recommendations)}, "
-            f"deep_intel_sections={len(deep_intel)}"
-        )
         return core_result
 
     def _parse_groq_response(self, raw_response: str) -> dict:
-        """
-        Parse Groq response with comprehensive control character handling.
-        
-        Issues this fixes:
-        1. Unescaped newlines inside JSON strings
-        2. Tab characters in values
-        3. Carriage returns
-        4. Other control characters (x00-x1f, x7f)
-        5. Markdown code fences
-        6. Trailing/leading whitespace
-        """
         if not raw_response:
-            logger.warning("Empty response from Groq")
             return {}
         
         raw = raw_response.strip()
         
-        # Step 1: Remove markdown code fences
         if raw.startswith("```"):
-            # Extract content between ``` markers
             parts = raw.split("```")
             if len(parts) >= 2:
                 raw = parts[1]
@@ -161,23 +120,15 @@ class GroqNarrator:
         
         raw = raw.strip()
         
-        # Step 2: Remove ALL control characters (except within valid JSON strings)
         cleaned = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', raw)
-        
-        # Step 3: Fix common unescaped newlines and tabs that still made it through
         parts = cleaned.split('"')
-        for i in range(1, len(parts), 2):  # Odd indices are string contents
+        for i in range(1, len(parts), 2):  
             parts[i] = parts[i].replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
         cleaned = '"'.join(parts)
-        
-        # Step 4: Try to parse
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError as e:
             logger.error(f"JSON parse failed after cleaning: {e}")
-            logger.debug(f"Cleaned response (first 500 chars): {cleaned[:500]}")
-            
-            # Step 5: Last resort — try to extract valid JSON from the response
             brace_start = cleaned.find('{')
             bracket_start = cleaned.find('[')
             
@@ -658,38 +609,24 @@ class GroqNarrator:
         conflict_signals = ml_signals.get("conflict_signals", {})
         velocity_signals = ml_signals.get("velocity_signals", {})
         person_signals = ml_signals.get("person_signals", {})
-
         total_msgs = max(ml_signals.get("message_count", 1), 1)
-
-        # Trust gap: normalize properly, cap at 8 unless extreme evidence
         trust_gap_raw = trust_signals.get("trust_gap_score", 3.0)
         trust_gap_score = min(trust_gap_raw, 8.5)
-
-        # Resilience: penalize per risk signal but don't go below 3
         high_risk = min(resilience_signals.get("high_flight_risk_count", 0), 3)
         ownership_gaps = min(resilience_signals.get("ownership_gap_count", 0), 3)
         departures = min(resilience_signals.get("departure_mention_count", 0), 2)
         resilience_score = max(3.0, 10 - (high_risk * 1.0) - (ownership_gaps * 0.5) - (departures * 0.8))
         resilience_score = round(min(resilience_score, 9.0), 2)
-
-        # Decision velocity days — use ML signal, fallback to 14
         avg_days = decision_signals.get("estimated_avg_days", 14)
         if avg_days < 1:
-            avg_days = 14  # guard against 0.2 type values
-
-        # Network density → info flow
+            avg_days = 14  
         network_density = network_signals.get("network_density", 0.05)
-        info_flow_score = min(network_density * 100, 8.0)  # scale up
-
-        # Conflict ratio → alignment
+        info_flow_score = min(network_density * 100, 8.0)  
         conflict_ratio = conflict_signals.get("conflict_ratio", 0.05)
         alignment_score = max(2.0, 10 - (conflict_ratio * 25))
-
-        # Reversal rate → decision quality
         reversal_rate = decision_signals.get("reversal_rate", 0.05)
         decision_quality = max(3.0, 10 - (reversal_rate * 15))
 
-        # Velocity score
         if avg_days <= 5:
             velocity_score = 9.0
         elif avg_days <= 10:
@@ -701,11 +638,8 @@ class GroqNarrator:
         else:
             velocity_score = 2.5
 
-        # Sentiment penalty
         negative_ratio = sentiment_signals.get("negative_ratio", 0.1)
         sentiment_penalty = min(negative_ratio * 10, 2.0)
-
-        # Health score — weighted, with sentiment penalty
         trust_health = 10.0 - trust_gap_score
         health_score = round(
             max(2.0, min(9.5,
@@ -720,7 +654,6 @@ class GroqNarrator:
             2
         )
 
-        # Top influencers sorted by ML influence score
         sorted_influencers = sorted(
             person_signals.items(),
             key=lambda x: x[1].get("influence_score", 0),
@@ -757,7 +690,6 @@ class GroqNarrator:
         }
 
     def _build_prompt(self, ml_signals: dict, computed_scores: dict) -> str:
-        # Serialize only what Groq needs (keep it focused)
         groq_input = {
             "computed_scores": computed_scores,
             "org_context": ml_signals.get("org_context", {}),
@@ -766,7 +698,7 @@ class GroqNarrator:
             "trust_signals": ml_signals.get("trust_signals", {}),
             "network_signals": {
                 k: v for k, v in ml_signals.get("network_signals", {}).items()
-                if k != "dept_comm"  # skip large objects
+                if k != "dept_comm"  
             },
             "decision_signals": ml_signals.get("decision_signals", {}),
             "resilience_signals": ml_signals.get("resilience_signals", {}),
