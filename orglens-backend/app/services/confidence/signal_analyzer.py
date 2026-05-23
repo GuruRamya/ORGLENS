@@ -19,23 +19,23 @@ class PatternStrength(str, Enum):
 @dataclass
 class SignalPattern:
     """A detected pattern in communication."""
-    pattern_name: str           # e.g., "approval_depth_high"
-    pattern_description: str    # Human readable
+    pattern_name: str          
+    pattern_description: str   
     strength: PatternStrength
-    evidence_count: int         # How many messages support this
-    prevalence_pct: float       # % of messages showing this
-    anonymized_evidence: List[str]  # Quotes (anonymized)
-    severity: str               # "low", "medium", "high", "critical"
-    affected_functions: List[str]   # ["Engineering", "Finance"] (no names)
-    recommendation: str         # What to do
+    evidence_count: int         
+    prevalence_pct: float       
+    anonymized_evidence: List[str]  
+    severity: str              
+    affected_functions: List[str]   
+    recommendation: str         
 
 @dataclass
 class SignalSet:
     """Collection of detected patterns for a dimension."""
-    dimension: str              # "velocity", "resilience", "trust"
+    dimension: str              
     signals: List[SignalPattern]
-    overall_health: float       # 0-10 score
-    confidence_level: str       # "critical", "low", "medium", "high", "very_high"
+    overall_health: float      
+    confidence_level: str      
 
 class SignalAnalyzer:
     """
@@ -52,14 +52,10 @@ class SignalAnalyzer:
         self.ml_signals = ml_signals
         self.total_messages = ml_signals.get("message_count", 0)
         self.total_people = ml_signals.get("employee_count", 0)
-    
-    # ─── VELOCITY PATTERNS ─────────────────────────────────────────────────────
-    
+        
     def extract_velocity_signals(self) -> SignalSet:
         """Detect decision-making speed patterns."""
         signals = []
-        
-        # Pattern 1: Approval chain depth
         approval_chains = self.ml_signals.get("approval_chains", [])
         if approval_chains:
             avg_depth = sum(len(c) for c in approval_chains) / len(approval_chains)
@@ -80,8 +76,6 @@ class SignalAnalyzer:
                     affected_functions=self._get_affected_functions("approval"),
                     recommendation="Create a decision authority matrix. Define which decisions can be made at each level without escalation."
                 ))
-        
-        # Pattern 2: Delay mentions
         delay_signals = (
             self.ml_signals
             .get("velocity_signals", {})
@@ -105,8 +99,6 @@ class SignalAnalyzer:
                 affected_functions=self._get_affected_functions("delay"),
                 recommendation="Implement async approval workflows. Document decision criteria so teams unblock without waiting for synchronous sign-off."
             ))
-        
-        # Pattern 3: Decision reversals
         decision_data = self.ml_signals.get("decision_signals", {})
         reversal_count = decision_data.get("reversal_count", 0)
         if reversal_count > 0:
@@ -141,16 +133,13 @@ class SignalAnalyzer:
             confidence_level=confidence
         )
     
-    # ─── RESILIENCE PATTERNS ──────────────────────────────────────────────────
     
     def extract_resilience_signals(self) -> SignalSet:
         """Detect single points of failure and knowledge silos."""
         signals = []
         
-        # Pattern 1: Knowledge concentration
         person_signals = self.ml_signals.get("person_signals", {})
         if person_signals:
-            # Count unique domains per person (anonymized)
             domain_distribution = self._analyze_domain_distribution(person_signals)
             singleton_domains = [d for d, owners in domain_distribution.items() if len(owners) == 1]
             
@@ -171,7 +160,6 @@ class SignalAnalyzer:
                     recommendation="Cross-train at least 2 people per critical domain. Document process and decision criteria."
                 ))
         
-        # Pattern 2: Departure mentions
         departure_mentions = (
             self.ml_signals
             .get("resilience_signals", {})
@@ -194,7 +182,6 @@ class SignalAnalyzer:
                 recommendation="Schedule retention conversations. Identify unmet growth, compensation, or recognition gaps."
             ))
         
-        # Pattern 3: Bus factor (concentration of decisions in few people)
         influence_scores = [
             v.get("influence_score", 0)
             for v in person_signals.values()
@@ -203,7 +190,7 @@ class SignalAnalyzer:
             top_3_influence = sum(sorted(influence_scores, reverse=True)[:3])
             concentration_pct = (top_3_influence / sum(influence_scores)) * 100 if sum(influence_scores) > 0 else 0
             
-            if concentration_pct > 60:  # Top 3 control >60% of influence
+            if concentration_pct > 60: 
                 strength = PatternStrength.VERY_STRONG
                 signals.append(SignalPattern(
                     pattern_name="influence_concentration",
@@ -229,20 +216,17 @@ class SignalAnalyzer:
             overall_health=overall_resilience,
             confidence_level=confidence
         )
-    
-    # ─── TRUST PATTERNS ───────────────────────────────────────────────────────
-    
+        
     def extract_trust_signals(self) -> SignalSet:
         """Detect alignment between stated values and observed behavior."""
         signals = []
         
-        # Pattern 1: Escalation frequency (high = distrust)
         escalation_rate = (
             self.ml_signals
             .get("trust_signals", {})
             .get("escalation_rate", 0)
         )
-        if escalation_rate > 0.1:  # >10% escalation
+        if escalation_rate > 0.1: 
             strength = PatternStrength.VERY_STRONG if escalation_rate > 0.25 else PatternStrength.STRONG
             signals.append(SignalPattern(
                 pattern_name="high_escalation_rate",
@@ -259,7 +243,6 @@ class SignalAnalyzer:
                 recommendation="Increase manager autonomy. Clarify what decisions can be made without escalation. Build trust through transparent criteria."
             ))
         
-        # Pattern 2: Compensation/fairness complaints
         comp_complaints = len(
             self.ml_signals
             .get("trust_signals", {})
@@ -290,7 +273,7 @@ class SignalAnalyzer:
                 recommendation="Audit compensation bands. Publish promotion criteria. Run town halls on fairness."
             ))
         
-        overall_trust = 10 - self._calculate_dimension_score([s.strength for s in signals])  # Inverted
+        overall_trust = 10 - self._calculate_dimension_score([s.strength for s in signals])  
         confidence = self._assess_confidence(len(signals), self.total_messages)
         
         return SignalSet(
@@ -299,20 +282,17 @@ class SignalAnalyzer:
             overall_health=overall_trust,
             confidence_level=confidence
         )
-    
-    # ─── COLLABORATION PATTERNS ───────────────────────────────────────────────
-    
+        
     def extract_collaboration_signals(self) -> SignalSet:
         """Detect cross-functional health and silos."""
         signals = []
         
-        # Pattern 1: Cross-function communication
         cross_func_ratio = (
             self.ml_signals
             .get("collaboration_signals", {})
             .get("cross_function_ratio", 0)
         )
-        if cross_func_ratio < 0.3:  # <30% cross-function communication
+        if cross_func_ratio < 0.3:  
             strength = PatternStrength.STRONG
             signals.append(SignalPattern(
                 pattern_name="functional_silos",
@@ -339,7 +319,6 @@ class SignalAnalyzer:
             confidence_level=confidence
         )
     
-    # ─── HELPERS ──────────────────────────────────────────────────────────────
     
     def _strength_from_value(self, value: float, low_threshold: float, high_threshold: float) -> PatternStrength:
         """Convert numeric value to strength level."""
