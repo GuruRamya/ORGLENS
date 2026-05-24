@@ -1463,7 +1463,10 @@ export default function Dashboard() {
   const [dashboard, setDashboard] = useState(null)
   const [expanded, setExpanded] = useState({})
 
-  useEffect(() => { loadDashboard() }, [analysisId])
+  useEffect(() => { 
+    window.scrollTo(0, 0)
+    loadDashboard() 
+  }, [analysisId])
 
   async function loadDashboard() {
     try {
