@@ -51,7 +51,6 @@ class InfluenceModel:
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Train gradient boosting classifier
         self.decision_reversal_model = GradientBoostingClassifier(
             n_estimators=100,
             max_depth=5,
@@ -61,7 +60,6 @@ class InfluenceModel:
 
         self.decision_reversal_model.fit(X_train, y_train)
 
-        # Evaluate
         train_accuracy = self.decision_reversal_model.score(X_train, y_train)
         test_accuracy = self.decision_reversal_model.score(X_test, y_test)
 
@@ -113,11 +111,9 @@ class InfluenceModel:
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Scale features
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
 
-        # Train random forest regressor
         self.influence_score_model = RandomForestRegressor(
             n_estimators=100,
             max_depth=10,
@@ -127,7 +123,6 @@ class InfluenceModel:
 
         self.influence_score_model.fit(X_train_scaled, y_train)
 
-        # Evaluate
         train_r2 = self.influence_score_model.score(X_train_scaled, y_train)
         test_r2 = self.influence_score_model.score(X_test_scaled, y_test)
 
@@ -213,7 +208,6 @@ class InfluenceModel:
         features_scaled = self.scaler.transform(features)
         predicted = self.influence_score_model.predict(features_scaled)[0]
 
-        # Clamp to 0-10
         predicted = max(0, min(predicted, 10))
 
         explanation = {
@@ -230,8 +224,6 @@ class InfluenceModel:
         }
 
         return float(predicted), explanation
-
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _prepare_reversal_features(self, training_data: list[dict]) -> Tuple[np.ndarray, np.ndarray]:
         """Prepare features for reversal model"""
