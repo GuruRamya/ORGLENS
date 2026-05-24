@@ -20,6 +20,7 @@ async def create_organization(org_data: OrgCreate, db: AsyncSession = Depends(ge
             industry=org_data.industry,
             size_estimate=org_data.size_estimate,
             mission_statement=org_data.mission_statement,
+            is_default=org_data.is_default,
         )
         db.add(org)
         await db.commit()
