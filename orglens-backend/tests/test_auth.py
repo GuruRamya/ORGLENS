@@ -24,10 +24,6 @@ from app.services.auth import (
     create_access_token,
 )
 
-# =============================================================================
-# POSTGRES TEST DATABASE
-# =============================================================================
-
 TEST_DATABASE_URL = (
     "postgresql+asyncpg://postgres:YOUR_PASSWORD@localhost:5432/orglens_test"
 )
@@ -43,11 +39,6 @@ TestSessionLocal = async_sessionmaker(
     expire_on_commit=False,
 )
 
-
-# =============================================================================
-# EVENT LOOP
-# =============================================================================
-
 @pytest.fixture(scope="session")
 def event_loop() -> Generator:
 
@@ -57,10 +48,6 @@ def event_loop() -> Generator:
 
     loop.close()
 
-
-# =============================================================================
-# DATABASE FIXTURE
-# =============================================================================
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
@@ -75,10 +62,6 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
-
-# =============================================================================
-# CLIENT FIXTURE
-# =============================================================================
 
 @pytest_asyncio.fixture(scope="function")
 async def client(
@@ -99,10 +82,6 @@ async def client(
 
     app.dependency_overrides.clear()
 
-
-# =============================================================================
-# TEST USER FIXTURE
-# =============================================================================
 
 @pytest_asyncio.fixture(scope="function")
 async def test_user(
@@ -134,10 +113,6 @@ async def test_user(
     return user
 
 
-# =============================================================================
-# AUTH HEADERS FIXTURE
-# =============================================================================
-
 @pytest_asyncio.fixture
 async def auth_headers(
     test_user: User,
@@ -150,10 +125,5 @@ async def auth_headers(
     return {
         "Authorization": f"Bearer {token}"
     }
-
-
-# =============================================================================
-# ASYNCIO MARK
-# =============================================================================
 
 pytestmark = pytest.mark.asyncio
