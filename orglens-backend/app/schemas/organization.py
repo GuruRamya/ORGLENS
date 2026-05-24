@@ -10,6 +10,7 @@ class OrgCreate(BaseModel):
     industry: Optional[str] = None
     size_estimate: Optional[int] = None
     mission_statement: Optional[str] = None
+    is_default: Optional[bool] = False
 
 
 class OrgResponse(BaseModel):
