@@ -16,14 +16,25 @@ router = APIRouter()
 
 
 @router.post("/trigger/{org_id}")
-async def trigger_analysis(org_id: str, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)) -> AnalysisTriggerResponse:
+async def trigger_analysis(
+    org_id: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> AnalysisTriggerResponse:
     result = await db.execute(select(Organization).where(Organization.id == org_id))
     org = result.scalar_one_or_none()
     if not org:
         raise HTTPException(status_code=404, detail="Organization not found")
-    msg_result = await db.execute(select(Message).where(Message.org_id == org_id).limit(1))
+    msg_result = await db.execute(
+        select(Message).where(Message.org_id == org_id).limit(1)
+    )
     if not msg_result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="No communication data found. Please upload data first.")
+        raise HTTPException(
+            status_code=400,
+            detail="No communication data found. Please upload data first."
+        )
+
     try:
         analysis = AnalysisReport(
             id=uuid4(),
@@ -32,18 +43,26 @@ async def trigger_analysis(org_id: str, db: AsyncSession = Depends(get_db), curr
         )
         db.add(analysis)
         await db.commit()
-        from app.workers.analysis_tasks import analyze_organization
-        task = analyze_organization.delay(str(org_id), str(analysis.id))
+        from app.workers.analysis_tasks import _async_analysis_pipeline
+        background_tasks.add_task(
+            _async_analysis_pipeline,
+            str(org_id),
+            str(analysis.id)
+        )
+
+        logger.info(f"✅ Analysis triggered for org {org.name}: {analysis.id}")
+
         return AnalysisTriggerResponse(
             analysis_id=analysis.id,
             org_id=org_id,
             status="queued",
             message="Analysis queued. Processing will begin shortly.",
-            estimated_minutes=5  
+            estimated_minutes=5
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
+    except Exception as e:
+        logger.error(f"Analysis trigger error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/status/{analysis_id}")
 async def get_analysis_status(
