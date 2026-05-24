@@ -25,20 +25,16 @@ class InfluenceScorer:
         """
         score = 0.0
 
-        # 1. Content-based influence (tone, conviction)
-        content_score = self._score_content_influence(text)  # 0-4
+        content_score = self._score_content_influence(text)  
         score += content_score
 
-        # 2. Authority-based influence (formal + inferred)
-        authority_score = sender_formal_authority * 2  # 0-2 (normalized from 0-10)
-        authority_score += self._infer_informal_authority(text, sender_title)  # 0-2
+        authority_score = sender_formal_authority * 2  
+        authority_score += self._infer_informal_authority(text, sender_title)  
         score += authority_score
 
-        # 3. Reception-based influence (how many people responded)
-        reception_score = min(received_responses * 0.5, 2.0)  # 0-2
+        reception_score = min(received_responses * 0.5, 2.0)  
         score += reception_score
 
-        # 4. Outcome-based influence (did it lead to action?)
         if decision_followed:
             score += 2.0
 
@@ -59,9 +55,8 @@ class InfluenceScorer:
         """
         score = 0.0
 
-        # 1. Activity signal (not too little, not too much)
         if messages_count > 100:
-            activity_score = 2.0  # High engagement
+            activity_score = 2.0  
         elif messages_count > 20:
             activity_score = 1.0
         else:
@@ -69,15 +64,12 @@ class InfluenceScorer:
 
         score += activity_score
 
-        # 2. Message quality (avg influence of their messages)
         quality_score = (avg_message_influence / 10.0) * 3.0  # 0-3
         score += quality_score
 
-        # 3. Response rate (how much do people engage with them?)
         response_score = avg_response_rate * 2.0  # 0-2
         score += response_score
 
-        # 4. Objection credibility (when they object, does it matter?)
         if objections_total > 0:
             objection_credibility = (objections_accepted / objections_total) * 2.0  # 0-2
         else:
@@ -85,10 +77,9 @@ class InfluenceScorer:
 
         score += objection_credibility
 
-        # 5. Decision outcome tracking (do their preferences get followed?)
         if decision_outcomes:
             outcome_ratio = sum(decision_outcomes) / len(decision_outcomes)
-            outcome_score = outcome_ratio * 2.0  # 0-2
+            outcome_score = outcome_ratio * 2.0  
         else:
             outcome_score = 0.0
 
@@ -157,32 +148,27 @@ class InfluenceScorer:
         credibility = (objection_accuracy + implementation_accuracy) / 2.0
         return min(credibility, 1.0)
 
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _score_content_influence(self, text: str) -> float:
         """Score how influential the content of a message is (0-4)"""
-        score = 1.0  # Base score
+        score = 1.0  
 
         text_lower = text.lower()
 
-        # Conviction indicators
         conviction_phrases = ["must", "need to", "should", "required", "must have"]
         conviction_count = sum(1 for phrase in conviction_phrases if phrase in text_lower)
         score += min(conviction_count * 0.5, 1.0)
 
-        # Veto/blocking indicators
         veto_phrases = ["can't", "won't", "not possible", "blocked", "rejected"]
         veto_count = sum(1 for phrase in veto_phrases if phrase in text_lower)
         score += min(veto_count * 0.5, 1.0)
 
-        # Evidence/reasoning (more detailed = more influential)
         words = text.split()
         if len(words) > 50:
             score += 0.5
         elif len(words) > 20:
             score += 0.2
 
-        # Numbers/specifics (concrete > vague)
         has_numbers = any(char.isdigit() for char in text)
         if has_numbers:
             score += 0.3
@@ -199,17 +185,14 @@ class InfluenceScorer:
 
         text_lower = text.lower()
 
-        # Expertise signals ("based on X years", "I've seen this", "in my experience")
         expertise_phrases = ["i've seen", "in my experience", "i know", "based on", "years of"]
         expertise_count = sum(1 for phrase in expertise_phrases if phrase in text_lower)
         score += min(expertise_count * 0.3, 0.6)
 
-        # Consensus-building ("everyone agrees", "the team thinks")
         consensus_phrases = ["everyone", "the team", "we all", "consensus"]
         consensus_count = sum(1 for phrase in consensus_phrases if phrase in consensus_phrases)
         score += min(consensus_count * 0.3, 0.4)
 
-        # Role-based informal authority
         if sender_title:
             title_lower = sender_title.lower()
             if "senior" in title_lower or "principal" in title_lower:
