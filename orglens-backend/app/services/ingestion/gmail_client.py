@@ -33,7 +33,6 @@ class GmailClient:
         result = IngestionResult()
 
         try:
-            # Get list of messages
             messages = self._get_message_ids(query, max_results)
 
             count = 0
@@ -90,15 +89,12 @@ class GmailClient:
             date_str = headers_dict.get("Date", "")
             msg_id = headers_dict.get("Message-ID", message.get("id", ""))
 
-            # Extract body
             body = self._get_email_body(message)
             if not body or len(body) < 20:
                 return None
 
-            # Combine subject + body
             content = f"Subject: {subject}\n{body}".strip()
 
-            # Parse date
             try:
                 ts = parsedate_to_datetime(date_str).replace(tzinfo=None)
             except Exception:
@@ -122,21 +118,18 @@ class GmailClient:
         try:
             payload = message.get("payload", {})
 
-            # Simple message
             if "parts" not in payload:
                 data = payload.get("body", {}).get("data", "")
                 if data:
                     return base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
                 return ""
 
-            # Multipart message - find text/plain part
             for part in payload.get("parts", []):
                 if part.get("mimeType") == "text/plain":
                     data = part.get("body", {}).get("data", "")
                     if data:
                         return base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
 
-            # Fallback to first part
             first_part = payload.get("parts", [{}])[0]
             data = first_part.get("body", {}).get("data", "")
             if data:
