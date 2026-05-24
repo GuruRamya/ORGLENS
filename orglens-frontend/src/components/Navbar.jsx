@@ -25,7 +25,6 @@ export default function Navbar() {
         : 'border-b border-neutral-100 bg-white/40 backdrop-blur-xl'
     }`}>
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
         <Link to="/" className="group relative z-10">
           <div className="absolute -inset-2 bg-maroon-500 rounded-xl opacity-0 group-hover:opacity-5 blur-xl transition-opacity duration-500" />
           <div className="relative flex items-center gap-2.5">
@@ -38,7 +37,6 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1.5">
           {navItems.map(({ to, label }) => {
             const active = pathname === to
@@ -62,7 +60,6 @@ export default function Navbar() {
           })}
         </nav>
 
-        {/* Mobile Menu Button */}
         <button 
           onClick={() => setIsOpen(!isOpen)}
           className="md:hidden relative z-20 p-2 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-900"
@@ -70,14 +67,12 @@ export default function Navbar() {
           {isOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
 
-        {/* Status Badge */}
         <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 border border-neutral-200 backdrop-blur-sm shadow-neo-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-maroon-600 animate-pulse shadow-lg shadow-maroon-600/50" />
           <span className="text-xs text-maroon-600 font-semibold">Live</span>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <div className={`md:hidden absolute top-16 left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-neutral-200 overflow-hidden transition-all duration-300 ${
         isOpen ? 'max-h-96' : 'max-h-0'
       }`}>
