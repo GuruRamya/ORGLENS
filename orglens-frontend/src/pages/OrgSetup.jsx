@@ -74,14 +74,12 @@ export default function OrgSetup() {
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
-      {/* Background decoration */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-maroon-100/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-neutral-100/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       <div className="relative max-w-3xl mx-auto px-6 py-12">
-        {/* Back Button */}
         <button
           onClick={() => navigate('/organizations')}
           className="group mb-8 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-neutral-600 hover:text-maroon-600 hover:bg-maroon-50 transition-all duration-300 shadow-neo-sm"
@@ -105,7 +103,6 @@ export default function OrgSetup() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Organization Name */}
           <div className="rounded-2xl border border-neutral-200 bg-white p-8 backdrop-blur-xl shadow-neo-md">
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-neutral-200">
               <div className="w-10 h-10 rounded-lg bg-maroon-600 flex items-center justify-center text-white font-bold">
@@ -130,7 +127,6 @@ export default function OrgSetup() {
             </div>
           </div>
 
-          {/* Organization Details */}
           <div className="rounded-2xl border border-neutral-200 bg-white p-8 backdrop-blur-xl shadow-neo-md">
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-neutral-200">
               <div className="w-10 h-10 rounded-lg bg-maroon-600 flex items-center justify-center text-white font-bold">
@@ -183,16 +179,14 @@ export default function OrgSetup() {
             </div>
           </div>
 
-          {/* Info Box */}
           <AlertBox 
             type="info"
             title="What happens next?"
             message="After creating your organization, you'll upload communication data (Slack, Gmail, or CSV files) and run the analysis to generate insights."
           />
 
-          {/* Submit Button */}
           <AnalyzeButton
-            onClick={() => {}} // Form will handle submission
+            onClick={() => {}} 
             loading={saving}
             label={orgId ? 'Update Organization' : 'Create Organization'}
             icon="✓"
