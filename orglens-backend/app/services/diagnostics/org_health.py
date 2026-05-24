@@ -28,14 +28,12 @@ class OrgHealthCalculator:
 
         Returns: {score, grade, breakdown, summary}
         """
-        # Normalize scores
-        trust_normalized = 10.0 - trust_gap_score  # Inverse: high gap = low score
+        trust_normalized = 10.0 - trust_gap_score  
         resilience_normalized = resilience_score
         decision_quality_normalized = decision_quality_score
         alignment_normalized = alignment_score
         information_flow_normalized = information_flow_score
 
-        # Velocity penalty (higher = slower = worse)
         if decision_velocity_days <= 5:
             velocity_score = 10.0
         elif decision_velocity_days <= 15:
@@ -45,7 +43,6 @@ class OrgHealthCalculator:
         else:
             velocity_score = 2.0
 
-        # Weight and combine
         weights = {
             "trust": 0.25,
             "resilience": 0.20,
@@ -64,7 +61,6 @@ class OrgHealthCalculator:
             information_flow_normalized * weights["information_flow"]
         )
 
-        # Clamp to 0-10
         final_score = max(0, min(weighted_score, 10.0))
 
         breakdown = {
@@ -107,17 +103,14 @@ class OrgHealthCalculator:
         for decision in decisions_made:
             score = 5.0  # Base
 
-            # Followed objections (good = listened to concerns)
             if decision.get("followed_objections_count", 0) > 0:
                 score += 1.0
 
-            # Not reversed (good = decision was solid)
             if decision.get("reversed_count", 0) == 0:
                 score += 2.0
             elif decision.get("reversed_count", 0) == 1:
                 score += 0.5
 
-            # Positive outcomes (good = decision had desired effect)
             if decision.get("positive_outcomes"):
                 score += 1.5
 
@@ -128,7 +121,7 @@ class OrgHealthCalculator:
     def calculate_alignment_score(
         self,
         stated_values: list[str],
-        actual_behaviors: dict,  # {behavior: prevalence_score}
+        actual_behaviors: dict, 
     ) -> float:
         """
         Score alignment between stated values and actual behaviors.
@@ -150,13 +143,10 @@ class OrgHealthCalculator:
         for value in stated_values:
             actual = actual_behaviors.get(value, 0.5)
 
-            # High prevalence (0.7+) = well aligned
             if actual >= 0.7:
                 alignment_scores.append(9.0)
-            # Medium (0.4-0.7) = partially aligned
             elif actual >= 0.4:
                 alignment_scores.append(5.0)
-            # Low (<0.4) = misaligned
             else:
                 alignment_scores.append(2.0)
 
@@ -177,12 +167,10 @@ class OrgHealthCalculator:
         """
         score = 5.0
 
-        # Check network connectivity
         nodes = communication_network.get("nodes", [])
         edges = communication_network.get("edges", [])
 
         if len(nodes) > 0:
-            # More edges = better flow
             connection_density = len(edges) / (len(nodes) ** 2) if len(nodes) > 1 else 0
 
             if connection_density > 0.3:
@@ -192,7 +180,6 @@ class OrgHealthCalculator:
             else:
                 score -= 1.0
 
-        # Check for silos
         sole_owner_silos = [s for s in information_silos if s.get("owner_count", 1) == 1]
 
         if sole_owner_silos:
@@ -200,8 +187,6 @@ class OrgHealthCalculator:
             score -= silo_penalty
 
         return max(0, min(score, 10.0))
-
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _score_to_grade(self, score: float) -> str:
         """Convert numeric score to letter grade"""
