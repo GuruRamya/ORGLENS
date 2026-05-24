@@ -8,10 +8,16 @@ import {
 
 
 async function fetchDemoReport() {
-  const { data } = await axios.get('/api/demo/report')
+  const orgId = import.meta.env.VITE_DEMO_ORG_ID
+  const analysisId = import.meta.env.VITE_DEMO_ANALYSIS_ID
+  
+  if (!orgId || !analysisId) {
+    throw new Error('Demo org/analysis IDs not configured in .env')
+  }
+  
+  const { data } = await axios.get(`/api/dashboard/${orgId}/${analysisId}`)
   return data
 }
-
 
 function scoreColor(score, invert = false) {
   const s = invert ? 10 - score : score
