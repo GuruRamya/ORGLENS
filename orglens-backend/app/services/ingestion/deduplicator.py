@@ -7,7 +7,6 @@ def names_match(a: str, b: str, threshold: float = 0.85) -> bool:
     a, b = normalize_name(a), normalize_name(b)
     if a == b:
         return True
-    # "Sarah Chen" vs "sarah.chen" vs "s.chen"
     ratio = SequenceMatcher(None, a, b).ratio()
     return ratio >= threshold
 
@@ -22,7 +21,6 @@ def deduplicate_employees(employees: list[dict]) -> list[dict]:
             ex_email = (existing.get("email") or "").lower()
             if (email and ex_email and email == ex_email) or \
                names_match(name, existing.get("name", "")):
-                # Merge: prefer non-null fields
                 for k, v in emp.items():
                     if v and not existing.get(k):
                         existing[k] = v
