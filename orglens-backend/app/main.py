@@ -11,7 +11,6 @@ from app.database import create_tables
 from app.routers import auth, upload, analysis, dashboard, organizations
 from app.routers import demo
 
-# Configure logging - only log to console on Render (no file)
 logger.remove()
 logger.add(
     sys.stdout,
