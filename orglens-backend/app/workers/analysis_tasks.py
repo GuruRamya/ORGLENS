@@ -33,7 +33,6 @@ def analyze_organization(self, org_id: str, analysis_id: str):
     logger.info(f"Starting analysis for org {org_id}, analysis {analysis_id}")
 
     try:
-        # Use asyncio.run() for proper event loop management (Python 3.7+)
         result = asyncio.run(
             _async_analysis_pipeline(org_id, analysis_id)
         )
@@ -42,7 +41,6 @@ def analyze_organization(self, org_id: str, analysis_id: str):
 
     except Exception as exc:
         logger.error(f"Analysis failed: {str(exc)}")
-        # Retry with exponential backoff
         raise self.retry(exc=exc, countdown=60)
 
 
@@ -73,7 +71,6 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
                     analysis.progress = int((step / total_steps) * 100)
                     await session.commit()
 
-            # ── Step 1: Load ────────────────────────────────────────────────
             logger.info("Step 1: Loading data...")
             org, employees, messages = await _load_org_data(session, org_id)
 
@@ -82,17 +79,13 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
             await session.commit()
             await update_progress(1)
 
-            # ── Step 2: NLP enrichment (enriches messages in DB) ────────────
             logger.info("Step 2: NLP enrichment...")
             decisions, _ = await _nlp_pipeline(session, org_id, messages)
             await update_progress(2)
 
-            # ── Step 3: ML Signal Extraction ────────────────────────────────
             logger.info("Step 3: ML signal extraction...")
             from app.services.ai_analysis import MLSignalExtractor, GroqNarrator
 
-            # Build employee list — merge DB employee objects with CSV fields
-            # Messages now have NLP enrichment from Step 2
             employee_list = []
             for emp_id, emp_obj in employees.items():
                 title = emp_obj.title or ""
@@ -104,7 +97,6 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
                     "title": title,
                     "level": level,
                     "department": dept,
-                    # Use ML-computed influence score from Step 2 if available
                     "influence_score": emp_obj.influence_score or 0,
                     "formal_authority_score": emp_obj.formal_authority_score or 5.0,
                     "flight_risk": _infer_flight_risk(emp_obj),
@@ -113,7 +105,6 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
                     "tenure_months": emp_obj.tenure_months or 0,
                 })
 
-            # Build message list — includes NLP fields from Step 2
             message_list = []
             for m in messages:
                 if not m.content:
@@ -124,7 +115,6 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
                     "channel_or_thread": m.channel_or_thread or "",
                     "content": m.content,
                     "timestamp": str(m.timestamp),
-                    # NLP enrichment from Step 2
                     "contains_decision": m.contains_decision or False,
                     "contains_objection": m.contains_objection or False,
                     "sentiment_score": m.sentiment_score or 0,
@@ -140,14 +130,11 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
                 "mission_statement": org.mission_statement or "",
             }
 
-            # Run ML signal extraction
             extractor = MLSignalExtractor()
             ml_signals = extractor.extract_all_signals(
                 employee_list, message_list, org_context
             )
 
-            # Also compute classic ML scores and inject into ml_signals
-            # so Groq has both signal types
             classic_ml = await _compute_classic_ml_scores(
                 session, org_id, messages, decisions, employees
             )
@@ -165,12 +152,10 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
             )
             await update_progress(3)
 
-            # ── Step 4: Groq AI Narration ────────────────────────────────────
             logger.info("Step 4: Groq AI narration...")
             narrator = GroqNarrator()
             ai_result = narrator.generate_analysis(ml_signals)
 
-            # Verify Groq returned real data
             logger.info(
                 f"Groq result: "
                 f"influencers={len(ai_result.get('top_influencers') or [])}, "
@@ -180,7 +165,6 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
             )
             await update_progress(4)
 
-            # ── Step 5: Save ─────────────────────────────────────────────────
             logger.info("Step 5: Saving results...")
             await _save_ai_analysis_results(
                 session, analysis_id, org_id, ai_result, ml_signals, messages
@@ -205,9 +189,6 @@ async def _async_analysis_pipeline(org_id: str, analysis_id: str):
         await engine.dispose()
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENRICHMENT — the four classes wired in
-# ═══════════════════════════════════════════════════════════════════════════════
  
 def _run_enrichment_analysis(ml_signals: dict, org_context_text: str) -> dict:
     """
@@ -221,11 +202,9 @@ def _run_enrichment_analysis(ml_signals: dict, org_context_text: str) -> dict:
     from app.services.confidence.org_archetype import ArchetypeClassifier
     from app.services.confidence.confidence_framework import ConfidenceCalculator
  
-    # 1. Extract what the org claims about itself
     claims = ClaimExtractor(org_context_text).extract_claims()
     logger.info(f"  Claims extracted: {len(claims)}")
  
-    # Attach computed ml scores that ContradictionDetector expects as top-level keys
     signals_for_detector = dict(ml_signals)
     trust_s = ml_signals.get("trust_signals", {})
     vel_s = ml_signals.get("velocity_signals", {})
@@ -245,15 +224,12 @@ def _run_enrichment_analysis(ml_signals: dict, org_context_text: str) -> dict:
         "attrition_risk_count": ml_signals.get("resilience_signals", {}).get("high_flight_risk_count", 0),
     }
  
-    # 2. Detect contradictions
     contradictions = ContradictionDetector(claims, signals_for_detector).detect_all()
     logger.info(f"  Contradictions detected: {len(contradictions)}")
  
-    # 3. Detect positive signals
     positive_signals = PositiveSignalDetector(ml_signals).detect_all()
     logger.info(f"  Positive signals detected: {len(positive_signals)}")
  
-    # 4. Classify archetype
     arch_signals = dict(ml_signals)
     arch_signals.setdefault("avg_decision_days", dec_s.get("estimated_avg_days", 14))
     arch_signals.setdefault("org_health_score",
@@ -263,13 +239,11 @@ def _run_enrichment_analysis(ml_signals: dict, org_context_text: str) -> dict:
  
     archetype_profile = ArchetypeClassifier(arch_signals, contradictions).classify()
  
-    # 5. Confidence metrics
     confidence_metrics = ConfidenceCalculator.from_ml_signals(ml_signals)
     conf_pct = int(confidence_metrics.calculate_base_confidence() * 100)
     conf_level = confidence_metrics.get_confidence_level().value
     warnings = confidence_metrics.get_warnings()
  
-    # Serialize everything — dataclasses → dicts
     def _serialize_contradiction(c):
         return {
             "claim": c.claim,
@@ -291,8 +265,8 @@ def _run_enrichment_analysis(ml_signals: dict, org_context_text: str) -> dict:
             "affected_people": s.affected_people,
             "affected_functions": s.affected_functions,
             "growth_potential": s.growth_potential,
-            "confidence_pct": getattr(s, "confidence_pct", 80),  # ADD THIS
-            "momentum": getattr(s, "momentum", "stable"),         # ADD THIS
+            "confidence_pct": getattr(s, "confidence_pct", 80), 
+            "momentum": getattr(s, "momentum", "stable"),         
         }
  
     def _serialize_archetype(a):
@@ -303,11 +277,11 @@ def _run_enrichment_analysis(ml_signals: dict, org_context_text: str) -> dict:
             "strengths": a.strengths,
             "vulnerabilities": a.vulnerabilities,
             "recommended_focus": a.recommended_focus,
-            "confidence_pct": a.confidence_pct,                    # CHANGE from "confidence"
-            "classification_reasons": a.classification_reasons,    # ADD THIS
-            "supporting_metrics": a.supporting_metrics,            # ADD THIS
-            "risk_level": a.risk_level,                            # ADD THIS
-            "trajectory": a.trajectory,                            # ADD THIS
+            "confidence_pct": a.confidence_pct,                    
+            "classification_reasons": a.classification_reasons,    
+            "supporting_metrics": a.supporting_metrics,            
+            "risk_level": a.risk_level,                           
+            "trajectory": a.trajectory,                            
         }
  
     return {
@@ -341,7 +315,6 @@ def _rough_health_from_signals(ml_signals: dict) -> float:
     trust_score = ml_signals.get("trust_signals", {}).get("trust_gap_score", 0)
     negative_ratio = ml_signals.get("sentiment_signals", {}).get("negative_ratio", 0.3)
     conflict_ratio = ml_signals.get("conflict_signals", {}).get("conflict_ratio", 0.1)
-    # Higher trust, lower negativity, lower conflict = healthier
     health = 10 - (trust_score * 0.4) - (negative_ratio * 10 * 0.3) - (conflict_ratio * 10 * 0.3)
     return max(1.0, min(10.0, round(health, 2)))
  
@@ -357,9 +330,6 @@ def _confidence_recommendation(conf_pct: int) -> str:
         return "✅ GOOD DATA: Confidence is high enough for strategic decisions. Continue collecting to refine findings."
     
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# PIPELINE STAGES
-# ═══════════════════════════════════════════════════════════════════════════════
 
 async def _load_org_data(session: AsyncSession, org_id: str):
     """
@@ -367,25 +337,21 @@ async def _load_org_data(session: AsyncSession, org_id: str):
     CRITICAL: Use selectinload() to eagerly fetch relationships
     """
     from uuid import UUID
-
-    # Get org
     org_result = await session.execute(
         select(Organization).where(Organization.id == UUID(org_id))
     )
     org = org_result.scalar_one_or_none()
 
-    # Get employees
     emp_result = await session.execute(
         select(Employee).where(Employee.org_id == UUID(org_id))
     )
     employees_list = emp_result.scalars().all()
     employees = {str(e.id): e for e in employees_list}
 
-    # CRITICAL: Eagerly load the 'content' column to avoid lazy loading later
     msg_result = await session.execute(
         select(Message)
         .where(Message.org_id == UUID(org_id))
-        .options(selectinload(Message.sender))  # Load sender relationship
+        .options(selectinload(Message.sender))  
     )
     messages = msg_result.scalars().all()
 
@@ -407,21 +373,17 @@ async def _nlp_pipeline(session: AsyncSession, org_id: str, messages: list) -> t
     message_updates = []
 
     for msg in messages:
-        # No lazy loading here because we eagerly loaded 'content' above
         if not msg.content or len(msg.content) < 20:
             continue
 
-        # Extract decisions
         decisions = decision_extractor.extract_decisions(msg.content)
         objections = decision_extractor.extract_objections(msg.content)
         influence_signals = decision_extractor.extract_influence_signals(msg.content)
 
-        # Sentiment & urgency
         sentiment = sentiment_analyzer.analyze_sentiment(msg.content)
         urgency = sentiment_analyzer.analyze_urgency(msg.content)
         tone = sentiment_analyzer.analyze_tone(msg.content)
 
-        # Update message with NLP results
         msg.contains_decision = len(decisions) > 0
         msg.contains_objection = len(objections) > 0
         msg.sentiment_score = sentiment.get("sentiment_score", 0)
@@ -432,7 +394,6 @@ async def _nlp_pipeline(session: AsyncSession, org_id: str, messages: list) -> t
 
         message_updates.append(msg)
 
-        # Track decisions
         for decision in decisions:
             all_decisions.append({
                 "title": decision.get("text", ""),
@@ -443,7 +404,6 @@ async def _nlp_pipeline(session: AsyncSession, org_id: str, messages: list) -> t
                 "proposed_at": msg.timestamp,
             })
 
-    # Commit all updates at once
     for msg in message_updates:
         await session.merge(msg)
     await session.commit()
@@ -458,7 +418,6 @@ async def _network_pipeline(messages: list, employees: dict) -> dict:
     """
     network_analyzer = NetworkAnalyzer()
 
-    # Build message data for network
     message_data = []
     for msg in messages:
         if msg.sender_id:
@@ -470,10 +429,8 @@ async def _network_pipeline(messages: list, employees: dict) -> dict:
                 "influence_score": msg.influence_signal or 0.5,
             })
 
-    # Build network
     network = network_analyzer.build_communication_network(message_data, employees)
 
-    # Identify special actors
     gatekeepers = network_analyzer.identify_gatekeepers(network.get("graph"))
     isolated = network_analyzer.identify_isolated_experts(network.get("graph"))
     alliances = network_analyzer.detect_alliances(network.get("graph"))
@@ -582,14 +539,12 @@ def _infer_flight_risk(emp_obj) -> str:
     Infer flight risk from available employee data.
     Uses tenure, influence gap, and credibility signals.
     """
-    # Short tenure = higher risk
     tenure = emp_obj.tenure_months or 0
     if tenure < 12:
         return "high"
     elif tenure < 24:
         return "medium"
 
-    # Influence gap (high influence, low authority = frustrated)
     influence = emp_obj.influence_score or 0
     authority = emp_obj.formal_authority_score or 5.0
     if influence > authority + 3:
@@ -618,7 +573,6 @@ async def _compute_classic_ml_scores(
     influence_model = InfluenceModel()
     predictor = Predictor(influence_model)
 
-    # Build network
     message_data = []
     for msg in messages:
         if msg.sender_id:
@@ -642,7 +596,6 @@ async def _compute_classic_ml_scores(
         isolated = network_analyzer.identify_isolated_experts(graph)
         alliances = network_analyzer.detect_alliances(graph)
 
-    # Per-employee influence scores
     per_employee_scores = {}
     for emp_id, emp_obj in employees.items():
         emp_messages = [m for m in messages if str(m.sender_id) == emp_id]
@@ -652,7 +605,6 @@ async def _compute_classic_ml_scores(
         )
         influence_score = min(avg_influence * 10, 10.0)
 
-        # Update DB employee object
         emp_obj.influence_score = influence_score
         emp_obj.formal_authority_score = 5.0
 
@@ -718,10 +670,8 @@ async def _save_ai_analysis_results(
             inf for inf in ai_result["top_influencers"]
             if not (inf.get("name", "").lower() in seen or seen.add(inf.get("name", "").lower()))
         ]
-    # Pull computed scores from ML signals as fallback
     computed = ml_signals.get("computed_scores") or {}
 
-    # ── Card 1: Org Health ──────────────────────────────────────────────────
     org_health = ai_result.get("org_health") or {}
     analysis.org_health_score = float(
         org_health.get("org_health_score")
@@ -734,7 +684,6 @@ async def _save_ai_analysis_results(
         or {}
     )
 
-    # ── Card 2: Trust Gap ───────────────────────────────────────────────────
     trust_gap = ai_result.get("trust_gap") or {}
     analysis.trust_gap_score = float(
         trust_gap.get("trust_gap_score")
@@ -747,7 +696,6 @@ async def _save_ai_analysis_results(
         "alignment_score": trust_gap.get("alignment_score"),
         "trend": trust_gap.get("trend") or "stable",
         "claims": trust_gap.get("claims") or [],
-        # Attach raw ML evidence for frontend
         "ml_evidence": {
             "comp_inversion_count": len(
                 ml_signals.get("trust_signals", {}).get("comp_inversion_evidence") or []
@@ -759,18 +707,15 @@ async def _save_ai_analysis_results(
         },
     }
 
-    # ── Card 3: Power Structure ─────────────────────────────────────────────
     person_signals = ml_signals.get("person_signals") or {}
     groq_power = ai_result.get("power_structure") or {}
 
-    # Build a lookup from Groq's nodes for type/evidence enrichment
     groq_node_map = {}
     for n in (groq_power.get("nodes") or []):
         name = (n.get("name") or "").lower().strip()
         if name:
             groq_node_map[name] = n
 
-    # Level → formal authority mapping
     level_authority = {
         "c-suite": 9.5, "vp": 8.0, "director": 7.0, "manager": 5.5,
         "senior ic": 4.5, "sr ic": 4.5, "ic": 3.0,
@@ -780,7 +725,7 @@ async def _save_ai_analysis_results(
         """Rule-based power type as ground truth, Groq as hint only."""
         gap = influence - authority
         if groq_type in ("hidden_power", "formal_leader", "ignored_authority", "gatekeeper"):
-            return groq_type  # trust Groq if it gave a specific answer
+            return groq_type  
         if gap > 1.5:
             return "hidden_power"
         if authority >= 7.5 and abs(gap) <= 1.5:
@@ -811,7 +756,6 @@ async def _save_ai_analysis_results(
             "evidence": groq_node.get("evidence") or "",
         })
 
-    # Sort: C-suite first, then by influence descending
     level_order = ["c-suite", "vp", "director", "manager", "senior ic", "sr ic", "ic", ""]
     all_nodes.sort(key=lambda n: (
         level_order.index(n.get("level", "").lower()) if n.get("level", "").lower() in level_order else 99,
@@ -832,9 +776,7 @@ async def _save_ai_analysis_results(
     except (TypeError, ValueError):
         analysis.power_structure = {"nodes": [], "edges": [], "clusters": []}
 
-    # ── Card 4: Top Influencers ─────────────────────────────────────────────
     top_influencers = ai_result.get("top_influencers") or []
-    # If Groq returned nothing, build from ML person signals
     if not top_influencers:
         person_signals = ml_signals.get("person_signals") or {}
         top_influencers = [
@@ -859,9 +801,7 @@ async def _save_ai_analysis_results(
         ]
     analysis.top_influencers = top_influencers
 
-    # ── Card 5: Gatekeepers ─────────────────────────────────────────────────
     gatekeepers = ai_result.get("gatekeepers") or []
-    # If Groq returned nothing, use ML gatekeeper signals
     if not gatekeepers:
         gk_signals = ml_signals.get("network_signals", {}).get("gatekeeper_signals") or {}
         classic_gk = (ml_signals.get("classic_ml_scores") or {}).get("ml_gatekeepers") or []
@@ -880,7 +820,6 @@ async def _save_ai_analysis_results(
         ]
     analysis.gatekeepers = gatekeepers
 
-    # ── Card 6: Resilience ──────────────────────────────────────────────────
     resilience = ai_result.get("resilience") or {}
     analysis.resilience_score = float(
         resilience.get("resilience_score")
@@ -888,7 +827,6 @@ async def _save_ai_analysis_results(
         or 5.0
     )
     spofs = resilience.get("single_points_of_failure") or []
-    # If empty, build from ML flight risk signals
     if not spofs:
         res_signals = ml_signals.get("resilience_signals") or {}
         spofs = [
@@ -918,7 +856,6 @@ async def _save_ai_analysis_results(
         },
     }
 
-    # ── Card 7: Decision Velocity ───────────────────────────────────────────
     velocity = ai_result.get("decision_velocity") or {}
     analysis.decision_velocity = {
         "avg_days": float(
@@ -943,10 +880,8 @@ async def _save_ai_analysis_results(
         },
     }
 
-    # ── Card 8: System Diagnosis ────────────────────────────────────────────
     diagnosis = ai_result.get("system_diagnosis") or {}
     root_causes = diagnosis.get("root_causes") or []
-    # If empty, generate from ML conflict signals
     if not root_causes:
         conflict = ml_signals.get("conflict_signals") or {}
         if conflict.get("conflict_message_count", 0) > 3:
@@ -975,10 +910,8 @@ async def _save_ai_analysis_results(
         "dysfunction_cost_annual": diagnosis.get("dysfunction_cost_annual"),
     }
 
-    # ── Card 9: Predictions ─────────────────────────────────────────────────
     predictions = ai_result.get("predictions") or {}
     attrition_risks = predictions.get("attrition_risk") or []
-    # If empty, build from ML flight risk
     if not attrition_risks:
         for person in (computed.get("flight_risk_persons") or []):
             attrition_risks.append({
@@ -1000,13 +933,10 @@ async def _save_ai_analysis_results(
     analysis.positive_signals = ml_signals.get("positive_signals", [])
     analysis.archetype = ml_signals.get("archetype", {})
     analysis.confidence_metrics = ml_signals.get("confidence_metrics", {})
-
-    # ── Card 10: Recommendations ────────────────────────────────────────────
     recommendations = ai_result.get("recommendations") or []
     analysis.recommendations = recommendations
     analysis.decisions_extracted = len(recommendations)
 
-    # ── Date range ──────────────────────────────────────────────────────────
     if messages:
         try:
             analysis.date_range_start = min(
@@ -1017,12 +947,9 @@ async def _save_ai_analysis_results(
             )
         except Exception:
             pass
-    # Add at the end of _save_ai_analysis_results, before await session.commit():
 
-    # ── Deep Intel (political map, culture toxins, CEO briefing) ────────────
     deep_intel = ai_result.get("deep_intel") or {}
     if deep_intel:
-        # Store in system_diagnosis extended fields
         analysis.system_diagnosis = analysis.system_diagnosis or {}
         analysis.system_diagnosis["political_map"] = deep_intel.get("political_map") or {}
         analysis.system_diagnosis["culture_toxins"] = deep_intel.get("culture_toxins") or []
