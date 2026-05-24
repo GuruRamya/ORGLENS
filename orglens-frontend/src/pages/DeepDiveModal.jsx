@@ -7,7 +7,6 @@ import {
   Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 
-// ─── colour helpers ────────────────────────────────────────────────────────────
 function scoreColor(score, invert = false) {
   const s = invert ? 10 - score : score
   if (s >= 7.5) return '#1D9E75'
@@ -20,9 +19,6 @@ function confidenceLevel(pct) {
   return { level: 'Low', color: '#E24B4A', icon: '✗' }
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: CONFIDENCE BADGE
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ConfidenceBadge({ confidence, label = '', tooltip = '' }) {
   const conf = confidenceLevel(confidence)
   return (
@@ -44,9 +40,6 @@ function ConfidenceBadge({ confidence, label = '', tooltip = '' }) {
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: EVIDENCE TRAIL
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function EvidenceTrail({ items, title = 'Derived from:' }) {
   if (!items?.length) return null
   return (
@@ -70,9 +63,6 @@ function EvidenceTrail({ items, title = 'Derived from:' }) {
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: UNCERTAINTY RANGE DISPLAY
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function UncertaintyRange({ value, min, max, confidence = 'Medium', color = '#BA7517', label = '' }) {
   const range = max - min
   const pctInRange = ((value - min) / range) * 100
@@ -86,18 +76,15 @@ function UncertaintyRange({ value, min, max, confidence = 'Medium', color = '#BA
           {value.toFixed(1)}
         </div>
         <div style={{ flex: 1, position: 'relative', height: 20, background: '#e5e3db', borderRadius: 4, overflow: 'hidden' }}>
-          {/* Range background */}
           <div style={{
             position: 'absolute', left: 0, top: 0, right: 0, bottom: 0,
             background: color + '15', borderRadius: 4
           }} />
-          {/* Uncertainty bar */}
           <div style={{
             position: 'absolute', left: '0%', top: 0, width: '100%', height: '100%',
             background: `linear-gradient(90deg, ${color}08 0%, ${color}20 50%, ${color}08 100%)`,
             borderRadius: 4
           }} />
-          {/* Point estimate */}
           <div style={{
             position: 'absolute', top: 0, left: `${pctInRange}%`, width: 3, height: '100%',
             background: color, borderRadius: 1, transform: 'translateX(-50%)'
@@ -114,11 +101,7 @@ function UncertaintyRange({ value, min, max, confidence = 'Medium', color = '#BA
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: SIGNAL CONTRIBUTION BREAKDOWN
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function SignalBreakdown({ signals, total = 10 }) {
-  // signals = [{label, value, color, pct}]
   if (!signals?.length) return null
   const sorted = [...signals].sort((a, b) => (b.value || 0) - (a.value || 0))
   return (
@@ -146,7 +129,6 @@ function SignalBreakdown({ signals, total = 10 }) {
   )
 }
 
-// ─── tiny badge ───────────────────────────────────────────────────────────────
 function Tag({ label, color = '#185FA5' }) {
   return (
     <span style={{
@@ -157,7 +139,6 @@ function Tag({ label, color = '#185FA5' }) {
   )
 }
 
-// ─── section wrapper ──────────────────────────────────────────────────────────
 function Section({ num, title, children, subtitle = '' }) {
   const [open, setOpen] = useState(true)
   return (
@@ -193,7 +174,6 @@ function Section({ num, title, children, subtitle = '' }) {
   )
 }
 
-// ─── metric pill row ──────────────────────────────────────────────────────────
 function MetricRow({ items }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(items.length, 5)}, 1fr)`, gap: 10, marginBottom: 20 }}>
@@ -211,7 +191,6 @@ function MetricRow({ items }) {
   )
 }
 
-// ─── bar row ──────────────────────────────────────────────────────────────────
 function BarRow({ label, value, max = 10, color = '#185FA5', suffix = '' }) {
   const pct = Math.min((value / max) * 100, 100)
   return (
@@ -227,7 +206,6 @@ function BarRow({ label, value, max = 10, color = '#185FA5', suffix = '' }) {
   )
 }
 
-// ─── evidence box ─────────────────────────────────────────────────────────────
 function EvidenceBox({ items }) {
   if (!items?.length) return null
   return (
@@ -248,9 +226,6 @@ function EvidenceBox({ items }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// 01 — TEMPORAL EVOLUTION
-// ══════════════════════════════════════════════════════════════════════════════
 function TemporalSection({ dashboard }) {
   const health   = dashboard?.org_health?.org_health_score   ?? 5
   const trust    = 10 - (dashboard?.trust_gap?.trust_gap_score ?? 5)
@@ -317,20 +292,15 @@ function TemporalSection({ dashboard }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// 02 — COMMUNICATION NETWORK (NO RESTRICTIONS — ALL NODES SHOWN)
-// ══════════════════════════════════════════════════════════════════════════════
 function NetworkSection({ dashboard }) {
   const [tooltip, setTooltip] = useState(null)
   const nodes = dashboard?.power_structure?.nodes || []
 
-  // Tier the nodes
   const cSuite  = nodes.filter(n => (n.level || '').toLowerCase().includes('c-suite') || (n.level || '').toLowerCase().includes('ceo') || (n.level || '').toLowerCase().includes('cto'))
   const vps     = nodes.filter(n => (n.level || '').toLowerCase() === 'vp')
   const mgrs    = nodes.filter(n => (n.level || '').toLowerCase() === 'manager' || (n.level || '').toLowerCase().includes('director'))
   const ics     = nodes.filter(n => !cSuite.includes(n) && !vps.includes(n) && !mgrs.includes(n))
 
-  // Assign (x,y) positions — SHOW ALL NODES, not just 12
   const W = 1200, H = 600
   const pos = {}
   const spread = (arr, y, margin = 60) => {
@@ -347,7 +317,7 @@ function NetworkSection({ dashboard }) {
   spread(cSuite, 80)
   spread(vps, 200)
   spread(mgrs, 320)
-  spread(ics, 450)   // SHOW ALL ICs — no cap
+  spread(ics, 450)   
 
   const colorFor = (n) => {
     const t = n.type || n.power_type || ''
@@ -367,7 +337,6 @@ function NetworkSection({ dashboard }) {
   }
   const radiusFor = (n) => Math.max(14, Math.min(22, 14 + (n.actual_influence || 0) * 0.8))
 
-  // Draw edges: C-suite → all VPs, VPs → all Mgrs
   const edges = []
   cSuite.forEach(c => {
     vps.forEach(v => {
@@ -485,9 +454,6 @@ function NetworkSection({ dashboard }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// 03 — MANAGER EFFECTIVENESS (NO RESTRICTIONS — ALL MANAGERS SHOWN)
-// ══════════════════════════════════════════════════════════════════════════════
 function ManagerSection({ dashboard }) {
   const nodes = dashboard?.power_structure?.nodes || []
   const bottlenecks = dashboard?.decision_velocity?.bottlenecks
@@ -495,7 +461,6 @@ function ManagerSection({ dashboard }) {
   const spofs  = dashboard?.resilience?.single_points_of_failure || []
   const influencers = dashboard?.top_influencers?.influencers || []
 
-  // SHOW ALL MANAGERS — no slice(0, 6)
   const mgrs = nodes
     .filter(n => ['manager','vp','director','c-suite'].includes((n.level||'').toLowerCase()))
     .map(n => {
@@ -569,9 +534,6 @@ function ManagerSection({ dashboard }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// 04 — BURNOUT DETECTION (ALL DEPARTMENTS SHOWN)
-// ══════════════════════════════════════════════════════════════════════════════
 function BurnoutSection({ dashboard }) {
   const sentiment   = dashboard?.sentiment_signals  || {}
   const velocity    = dashboard?.decision_velocity   || {}
@@ -581,7 +543,6 @@ function BurnoutSection({ dashboard }) {
   const delayCount  = mlSigs.delay_message_count     ?? 0
   const approvals   = mlSigs.approval_chain_count    ?? 0
 
-  // SHOW ALL DEPARTMENTS — no slice
   const depts = {}
   ;(dashboard?.power_structure?.nodes || []).forEach(n => {
     const dept = n.department || 'Unknown'
@@ -596,7 +557,6 @@ function BurnoutSection({ dashboard }) {
       risk: Math.min(Math.round((v.ignored / v.total) * 100 + negRatio * 40 + delayCount * 1.5), 95)
     }))
     .sort((a, b) => b.risk - a.risk)
-    // NO .slice(0, 6) — SHOW ALL
 
   const chartData = deptBurnout.length > 0 ? deptBurnout : [
     { dept: 'Engineering', risk: Math.min(Math.round(negRatio * 80 + 35), 90) },
@@ -617,7 +577,6 @@ function BurnoutSection({ dashboard }) {
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
-        {/* dept bar chart */}
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Burnout risk by dept — All ({chartData.length} total)
@@ -636,7 +595,6 @@ function BurnoutSection({ dashboard }) {
           </ResponsiveContainer>
         </div>
 
-        {/* behavioral signals */}
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 10, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Behavioral exhaustion signals
@@ -656,9 +614,6 @@ function BurnoutSection({ dashboard }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// 05 — PSYCHOLOGICAL SAFETY INDEX
-// ══════════════════════════════════════════════════════════════════════════════
 function PsychSafetySection({ dashboard }) {
   const trust      = 10 - (dashboard?.trust_gap?.trust_gap_score ?? 5)
   const escRate    = dashboard?.trust_gap?.ml_evidence?.escalation_rate ?? 0.15
@@ -718,9 +673,6 @@ function PsychSafetySection({ dashboard }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// 06 — EVIDENCE CHAINS (ALL EVIDENCE SHOWN)
-// ══════════════════════════════════════════════════════════════════════════════
 function EvidenceSection({ dashboard }) {
   const trustGap  = dashboard?.trust_gap  || {}
   const mlEv      = trustGap.ml_evidence  || {}
@@ -738,7 +690,6 @@ function EvidenceSection({ dashboard }) {
         { label: 'Escalation rate',        value: (mlEv.escalation_rate || 0) * 100,   max: 50, suffix: '%' },
         { label: 'Sentiment divergence',   value: (trustGap.trust_gap_score || 0) * 8, max: 100, suffix: '%' },
       ],
-      // SHOW ALL QUOTES — no slice(0, 2)
       quotes: (trustGap.top_gaps || trustGap.claims || []).map(c => c.evidence).filter(Boolean),
     },
     {
@@ -749,7 +700,6 @@ function EvidenceSection({ dashboard }) {
         { label: 'Delay messages',           value: mlSig.delay_message_count || 0,      max: 30 },
         { label: 'Approval chain msgs',      value: mlSig.approval_chain_count || 0,     max: 20 },
       ],
-      // SHOW ALL BOTTLENECKS — no slice(0, 2)
       quotes: bottlenecks.map(b => `${b.name}: ${b.reason}`),
     },
   ]
@@ -789,9 +739,6 @@ function EvidenceSection({ dashboard }) {
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: EXPLAINABILITY LAYER — ENHANCED ORG HEALTH
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function OrgHealthExplained({ dashboard, confidence_metrics = {} }) {
   const health = dashboard?.org_health?.org_health_score ?? 5
   const breakdown = dashboard?.org_health?.health_breakdown || {}
@@ -844,9 +791,6 @@ function OrgHealthExplained({ dashboard, confidence_metrics = {} }) {
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: EXECUTIVE SUMMARIES (CHRO, CTO, CEO)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function ExecutiveSummaries({ dashboard }) {
   const [active, setActive] = useState('chro')
 
@@ -931,13 +875,9 @@ function ExecutiveSummaries({ dashboard }) {
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: ORG EVOLUTION / ARCHETYPE TIMELINE
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function OrgEvolution({ dashboard, archetype }) {
   const arch = archetype || dashboard?.archetype || {}
 
-  // Map archetype to evolution path
   const archetypeEvolution = {
     'fast_and_political': [
       { q: 'Q1', name: 'Entrepreneurial', health: 7, desc: 'Fast decisions, unclear criteria', icon: '🚀' },
@@ -1006,9 +946,6 @@ function OrgEvolution({ dashboard, archetype }) {
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: COMMUNICATION BEHAVIOR ARCHETYPES
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function BehaviorArchetypes({ dashboard }) {
   const [expandedCategory, setExpandedCategory] = useState(null)
   const [selectedPerson, setSelectedPerson] = useState(null)
@@ -1068,9 +1005,6 @@ function BehaviorArchetypes({ dashboard }) {
       </div>
 
       {selectedPerson ? (
-        // ═══════════════════════════════════════════════════════════
-        // PERSON DETAIL VIEW
-        // ═══════════════════════════════════════════════════════════
         <div style={{
           padding: '18px', borderRadius: 10, background: 'var(--color-background-primary)',
           border: `0.5px solid var(--color-border-tertiary)`
@@ -1111,7 +1045,6 @@ function BehaviorArchetypes({ dashboard }) {
             </div>
           </div>
 
-          {/* Key Metrics */}
           <div style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Power & Influence Profile
@@ -1122,7 +1055,6 @@ function BehaviorArchetypes({ dashboard }) {
             <BarRow label="Psychological safety" value={Math.min((selectedPerson.actual_influence || 0) * 0.85, 10)} max={10} color="#1D9E75" />
           </div>
 
-          {/* Influencer Data / Evidence */}
           {selectedPerson.influencer_data && (
             <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1140,7 +1072,6 @@ function BehaviorArchetypes({ dashboard }) {
             </div>
           )}
 
-          {/* Department & Role Info */}
           {(selectedPerson.level || selectedPerson.reports_to) && (
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1166,9 +1097,6 @@ function BehaviorArchetypes({ dashboard }) {
           )}
         </div>
       ) : (
-        // ═══════════════════════════════════════════════════════════
-        // CATEGORY VIEW (All Archetypes)
-        // ═══════════════════════════════════════════════════════════
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
           {Object.entries(byArchetype).map(([key, people]) => {
             const arch = archetypes[key]
@@ -1178,7 +1106,6 @@ function BehaviorArchetypes({ dashboard }) {
 
             return (
               <div key={key}>
-                {/* Category Button */}
                 <button onClick={() => setExpandedCategory(isExpanded ? null : key)} style={{
                   width: '100%', padding: '16px', borderRadius: 10,
                   background: arch.bg,
@@ -1197,7 +1124,6 @@ function BehaviorArchetypes({ dashboard }) {
                   </div>
                 </button>
 
-                {/* Expanded Person List */}
                 {isExpanded && people.length > 0 && (
                   <div style={{
                     marginTop: 10, padding: '12px', borderRadius: 8,
@@ -1244,7 +1170,6 @@ function BehaviorArchetypes({ dashboard }) {
         </div>
       )}
 
-      {/* Summary Footer */}
       {!selectedPerson && (
         <div style={{
           marginTop: 16, paddingTop: 12, borderTop: '0.5px solid var(--color-border-tertiary)',
@@ -1261,9 +1186,6 @@ function BehaviorArchetypes({ dashboard }) {
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: BENCHMARKING LAYER
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function BenchmarkingCard({ dashboard }) {
   const health = dashboard?.org_health?.org_health_score ?? 5
   const velocity = dashboard?.decision_velocity?.avg_days ?? 21
@@ -1356,9 +1278,6 @@ function BenchmarkingCard({ dashboard }) {
   )
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// NEW: NETWORK-REACTIVE SIMULATIONS
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function NetworkReactiveSimulation({ dashboard }) {
   const [active, setActive] = useState(null)
   
@@ -1369,12 +1288,10 @@ function NetworkReactiveSimulation({ dashboard }) {
     const targetNode = nodes.find(n => n.name === targetNodeName)
     if (!targetNode) return null
     
-    // Direct reports (people who report to this person)
     const directReports = nodes.filter(n => 
       n.reports_to === targetNodeName || n.manager_name === targetNodeName
     )
     
-    // Cross-functional dependencies (people who depend on this person)
     const upstreamDeps = nodes.filter(n => 
       n.name !== targetNodeName && (
         (n.department !== targetNode.department && n.formal_authority < targetNode.formal_authority) ||
@@ -1409,7 +1326,6 @@ function NetworkReactiveSimulation({ dashboard }) {
     }
   }
   
-  // Get all impactful people sorted by cascade loss
   const allImpacts = nodes
     .map(n => ({ node: n, impact: calculateNetworkImpact(n.name) }))
     .filter(x => x.impact && x.impact.total_affected > 0)
@@ -1460,7 +1376,6 @@ function NetworkReactiveSimulation({ dashboard }) {
           padding: '18px', borderRadius: 10, background: '#FEF2F2',
           border: '0.5px solid #E24B4A40'
         }}>
-          {/* Header with person info */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 18 }}>
             <div style={{
               width: 50, height: 50, borderRadius: '50%', flexShrink: 0,
@@ -1492,7 +1407,6 @@ function NetworkReactiveSimulation({ dashboard }) {
             )}
           </div>
 
-          {/* Three-column key metrics */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 18 }}>
             <div style={{ background: 'rgba(255,255,255,0.6)', borderRadius: 8, padding: '14px' }}>
               <div style={{ fontSize: 10, color: '#A32D2D', marginBottom: 6, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -1531,7 +1445,6 @@ function NetworkReactiveSimulation({ dashboard }) {
             </div>
           </div>
 
-          {/* Cascading Impact Metrics */}
           <div style={{ marginBottom: 18, paddingBottom: 16, borderBottom: '0.5px solid rgba(255,255,255,0.5)' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#A32D2D', marginBottom: 12 }}>
               📊 Cascading Impact Metrics
@@ -1542,7 +1455,6 @@ function NetworkReactiveSimulation({ dashboard }) {
             <BarRow label="Knowledge criticality loss"   value={impact.knowledge_loss}         max={10} color="#BA7517" suffix="/10" />
           </div>
 
-          {/* Direct Reports Section */}
           {impact.direct_reports.length > 0 && (
             <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '0.5px solid rgba(255,255,255,0.5)' }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#A32D2D', marginBottom: 12 }}>
@@ -1578,7 +1490,6 @@ function NetworkReactiveSimulation({ dashboard }) {
             </div>
           )}
 
-          {/* Cross-Functional Dependencies Section */}
           {impact.upstream_deps.length > 0 && (
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#A32D2D', marginBottom: 12 }}>
@@ -1626,9 +1537,6 @@ function NetworkReactiveSimulation({ dashboard }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// 07 — SIMULATION ENGINE
-// ══════════════════════════════════════════════════════════════════════════════
 function SimulationSection({ dashboard }) {
   const [active, setActive] = useState(null)
 
@@ -1776,9 +1684,6 @@ function SimulationSection({ dashboard }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// VERDICT PARAGRAPH
-// ══════════════════════════════════════════════════════════════════════════════
 function VerdictParagraph({ dashboard, org, confidence_metrics={} }) {
   const health   = dashboard?.org_health?.org_health_score   ?? 5
   const trustGap = dashboard?.trust_gap?.trust_gap_score      ?? 5
@@ -1817,12 +1722,8 @@ function VerdictParagraph({ dashboard, org, confidence_metrics={} }) {
   )
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// MAIN PAGE COMPONENT
-// ══════════════════════════════════════════════════════════════════════════════
 
 function DeepDiveDemo() {
-  // DEMO DASHBOARD DATA
   const dashboard = {
     power_structure: {
       nodes: [
@@ -1886,7 +1787,6 @@ export default function DeepDivePage() {
 
   async function loadData() {
     try {
-      // Assuming you have these imported from api
       const { getOrganization, getDashboardReport } = await import('../api')
       const [orgData, dashData] = await Promise.all([
         getOrganization(orgId),
@@ -1943,7 +1843,6 @@ export default function DeepDivePage() {
 
   return (
     <div style={{ background: 'var(--color-background-primary, #fff)', minHeight: '100vh' }}>
-      {/* Header */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 100,
         borderBottom: '0.5px solid var(--color-border-tertiary, #e5e3db)',
@@ -1977,9 +1876,7 @@ export default function DeepDivePage() {
         </button>
       </div>
 
-      {/* Content */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 28px 64px' }}>
-        {/* VERDICT WITH CONFIDENCE */}
         <VerdictParagraph dashboard={dashboard} org={org} confidence_metrics={conf_metrics} />
         <MetricRow items={[
           { label: 'Org health',       value: (dashboard.org_health?.org_health_score || 0).toFixed(1) + '/10', color: scoreColor(dashboard.org_health?.org_health_score || 0) },
