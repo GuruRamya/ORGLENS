@@ -52,7 +52,7 @@ def main():
     log(f"Targeting API: {BASE}")
 
     try:
-        r = requests.get(f"{BASE}/health", timeout=5)
+        r = requests.get(f"{BASE}/health", timeout=50)
         r.raise_for_status()
         log("Backend is healthy", "OK")
     except Exception as e:
