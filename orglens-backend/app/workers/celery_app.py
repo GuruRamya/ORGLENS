@@ -7,10 +7,8 @@ celery_app = Celery(
     backend=settings.celery_result_backend,
 )
 
-# 🔥 THIS LINE FIXES YOUR ERROR
 celery_app.autodiscover_tasks(["app.workers"])
 
-# Optional but recommended
 celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],
