@@ -16,7 +16,7 @@ class NetworkAnalyzer:
     def build_communication_network(
         self,
         messages: list[dict],
-        employees: dict,  # {employee_id: employee_obj}
+        employees: dict,  
     ) -> dict:
         """
         Build a directed graph of communication patterns.
@@ -26,7 +26,6 @@ class NetworkAnalyzer:
         """
         graph = nx.DiGraph()
 
-        # Add nodes (employees)
         for emp_id, emp_obj in employees.items():
             graph.add_node(
                 emp_id,
@@ -36,8 +35,7 @@ class NetworkAnalyzer:
                 level=emp_obj.level,
             )
 
-        # Add edges (communication)
-        edge_weights = {}  # (from, to): weight
+        edge_weights = {}  
 
         for msg in messages:
             sender_id = msg.get("sender_id")
@@ -53,7 +51,6 @@ class NetworkAnalyzer:
                     edge_weights[key] = []
                 edge_weights[key].append(influence_score)
 
-        # Create edges with aggregate weights
         for (sender, recipient), scores in edge_weights.items():
             weight = np.mean(scores)
             graph.add_edge(
@@ -64,7 +61,6 @@ class NetworkAnalyzer:
                 avg_influence=weight,
             )
 
-        # Calculate network metrics
         nodes = self._extract_nodes(graph, employees)
         edges = self._extract_edges(graph)
         clusters = self._detect_clusters(graph)
@@ -85,13 +81,10 @@ class NetworkAnalyzer:
         """
         gatekeepers = []
 
-        # Betweenness centrality: nodes that connect different parts of the network
         betweenness = nx.betweenness_centrality(graph, weight="weight")
 
-        # Clustering coefficient: are neighbors connected to each other?
         clustering = nx.clustering(graph, weight="weight")
 
-        # Degree centrality
         in_degree = dict(graph.in_degree(weight="weight"))
         out_degree = dict(graph.out_degree(weight="weight"))
 
@@ -101,11 +94,9 @@ class NetworkAnalyzer:
             in_deg = in_degree.get(node_id, 0)
             out_deg = out_degree.get(node_id, 0)
 
-            # High betweenness + low clustering = gatekeeper
-            # (connects different groups, but those groups don't directly connect)
             gatekeeper_score = betweenness_score * (1 - clustering_score)
 
-            if gatekeeper_score > 1.0:  # Threshold
+            if gatekeeper_score > 1.0:  
                 gatekeepers.append({
                     "node_id": node_id,
                     "gatekeeper_score": gatekeeper_score,
@@ -133,7 +124,6 @@ class NetworkAnalyzer:
             out_deg = out_degree.get(node_id, 0)
             clustering_score = clustering.get(node_id, 0)
 
-            # High in-degree (sought out), low out-degree (doesn't initiate), low clustering (isolated)
             if in_deg > 2.0 and out_deg < 1.0 and clustering_score < 0.3:
                 isolated.append({
                     "node_id": node_id,
@@ -157,7 +147,6 @@ class NetworkAnalyzer:
         try:
             communities = list(community.greedy_modularity_communities(undirected, weight="weight"))
         except Exception:
-            # Fallback
             return []
 
         alliances = []
@@ -165,7 +154,6 @@ class NetworkAnalyzer:
             if len(comm) < 2:
                 continue
 
-            # Calculate internal cohesion
             subgraph = graph.subgraph(comm)
             internal_edges = subgraph.number_of_edges()
             possible_edges = len(comm) * (len(comm) - 1)
@@ -184,7 +172,6 @@ class NetworkAnalyzer:
 
         return sorted(alliances, key=lambda x: x["cohesion"], reverse=True)
 
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _extract_nodes(self, graph: nx.DiGraph, employees: dict) -> list[dict]:
         """Extract nodes from graph with metrics"""
@@ -203,7 +190,7 @@ class NetworkAnalyzer:
                 "level": graph.nodes[node_id].get("level"),
                 "in_degree": in_degree.get(node_id, 0),
                 "out_degree": out_degree.get(node_id, 0),
-                "pagerank": pagerank.get(node_id, 0) * 100,  # Scale for readability
+                "pagerank": pagerank.get(node_id, 0) * 100, 
             })
 
         return nodes
