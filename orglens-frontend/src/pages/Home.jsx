@@ -47,14 +47,12 @@ export default function Home() {
 
   return (
     <main className="relative overflow-hidden bg-white">
-      {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-96 h-96 bg-maroon-100/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute top-40 right-20 w-80 h-80 bg-neutral-100/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute -bottom-20 left-1/2 w-96 h-96 bg-neutral-50/40 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      {/* Dynamic light follow cursor */}
       <div
         className="fixed pointer-events-none w-96 h-96 rounded-full blur-3xl opacity-10 transition-opacity duration-300"
         style={{
@@ -65,7 +63,6 @@ export default function Home() {
       />
 
       <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-40">
-        {/* Hero Section */}
         <div className="text-center mb-32 space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-maroon-50 border border-maroon-200 text-maroon-700 text-xs font-bold tracking-widest uppercase animate-fadeIn shadow-neo-sm">
             <span className="w-2 h-2 rounded-full bg-maroon-600 animate-pulse shadow-lg shadow-maroon-600/50" />
@@ -106,7 +103,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-32 animate-fadeIn" style={{ animationDelay: '0.3s' }}>
           {FEATURES.map(({ Icon, title, desc }, i) => (
             <div
@@ -125,7 +121,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* How It Works */}
         <div className="mb-32 space-y-12">
           <div className="text-center space-y-2">
             <p className="text-maroon-700 text-sm font-bold tracking-widest uppercase">Process</p>
@@ -154,7 +149,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Analysis Cards */}
         <div id="cards" className="space-y-12">
           <div className="text-center space-y-2">
             <p className="text-maroon-700 text-sm font-bold tracking-widest uppercase">Dashboard</p>
@@ -178,7 +172,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* CTA Section */}
         <div className="mt-40 relative rounded-3xl border border-neutral-200 bg-gradient-to-br from-maroon-50 to-white p-12 text-center overflow-hidden shadow-neo-lg">
           <div className="relative space-y-4">
             <h3 className="font-display text-3xl font-bold text-neutral-900">Ready to Analyze Your Organization?</h3>
@@ -194,7 +187,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="mt-32 pt-12 border-t border-neutral-200 text-center space-y-3">
           <p className="text-neutral-600 text-sm">
             Built with precision by <span className="text-maroon-600 font-bold">OrgLens</span>
