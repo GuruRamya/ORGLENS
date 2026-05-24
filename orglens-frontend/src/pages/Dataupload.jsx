@@ -118,7 +118,7 @@ export default function DataUpload() {
             clearInterval(interval)
             setProgress(100)
             setTimeout(() => {
-              navigate(`/org/${orgId}/analysis/${analysisResult.analysis_id}`)
+              navigate(`/org/${orgId}/dashboard/${analysisResult.analysis_id}`)
             }, 1000)
           }
         } catch (err) {
@@ -128,7 +128,7 @@ export default function DataUpload() {
 
     setTimeout(() => {
         clearInterval(interval)
-        navigate(`/org/${orgId}/analysis/${analysisResult.analysis_id}`)
+        navigate(`/org/${orgId}/dashboard/${analysisResult.analysis_id}`)
       }, 60000)
       
   } catch (err) {
