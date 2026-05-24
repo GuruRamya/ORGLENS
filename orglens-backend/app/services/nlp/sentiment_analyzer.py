@@ -19,8 +19,8 @@ class SentimentAnalyzer:
         """
         try:
             blob = TextBlob(text)
-            polarity = blob.sentiment.polarity  # -1 (negative) to 1 (positive)
-            subjectivity = blob.sentiment.subjectivity  # 0 (objective) to 1 (subjective)
+            polarity = blob.sentiment.polarity  
+            subjectivity = blob.sentiment.subjectivity  
 
             if polarity > 0.1:
                 label = "positive"
@@ -53,7 +53,6 @@ class SentimentAnalyzer:
         text_lower = text.lower()
         score = 0.0
 
-        # Critical urgency indicators
         critical_phrases = [
             "asap", "urgent", "critical", "emergency", "immediately",
             "now", "right away", "blocking", "cannot wait", "blocked"
@@ -63,7 +62,6 @@ class SentimentAnalyzer:
                 score = 0.9
                 break
 
-        # High urgency
         if score < 0.8:
             high_phrases = [
                 "soon", "deadline", "week", "sprint", "ship",
@@ -72,17 +70,15 @@ class SentimentAnalyzer:
             high_count = sum(1 for phrase in high_phrases if phrase in text_lower)
             score = max(score, min(high_count * 0.15, 0.7))
 
-        # Exclamation marks and caps
         exclamation_count = text.count("!")
         caps_ratio = sum(1 for c in text if c.isupper()) / max(len(text), 1)
 
         if exclamation_count > 2:
             score = max(score, 0.6)
 
-        if caps_ratio > 0.3:  # More than 30% caps
+        if caps_ratio > 0.3:  
             score = max(score, 0.5)
 
-        # Determine level
         if score > 0.75:
             level = "critical"
         elif score > 0.5:
@@ -104,32 +100,27 @@ class SentimentAnalyzer:
         """
         text_lower = text.lower()
 
-        # Formality
         formal_indicators = ["therefore", "pursuant", "moreover", "accordingly", "hereby"]
         is_formal = sum(1 for ind in formal_indicators if ind in text_lower) > 0
 
-        # Aggressiveness
         aggressive_indicators = [
             "can't", "won't", "never", "absolutely not", "blocked",
             "this won't work", "that's wrong", "don't"
         ]
         is_aggressive = sum(1 for ind in aggressive_indicators if ind in text_lower) >= 2
 
-        # Questioning/exploratory
         is_questioning = (
             text.count("?") > 2 or
             sum(1 for ind in ["what if", "could we", "have you considered", "question is"]
                 if ind in text_lower) >= 1
         )
 
-        # Collaborative
         collaborative_indicators = [
             "we", "us", "together", "collaborate", "team", "let's", "can we",
             "what do you think", "your input"
         ]
         is_collaborative = sum(1 for ind in collaborative_indicators if ind in text_lower) >= 2
 
-        # Determine primary tone
         if is_aggressive:
             tone = "blocking"
         elif is_questioning:
@@ -156,21 +147,18 @@ class SentimentAnalyzer:
         """
         text_lower = text.lower()
 
-        # Confidence indicators
         confident_phrases = [
             "definitely", "certainly", "absolutely", "no doubt", "clearly",
             "obviously", "without question", "of course"
         ]
         confidence_count = sum(1 for phrase in confident_phrases if phrase in text_lower)
 
-        # Uncertainty/qualifier indicators
         uncertainty_phrases = [
             "maybe", "perhaps", "might", "could", "possibly", "seems like",
             "i think", "might be", "sort of", "kind of", "a bit", "not sure"
         ]
         uncertainty_count = sum(1 for phrase in uncertainty_phrases if phrase in text_lower)
 
-        # Calculate score
         score = 0.5  # Base
         score += min(confidence_count * 0.15, 0.3)
         score -= min(uncertainty_count * 0.1, 0.3)
@@ -192,20 +180,16 @@ class SentimentAnalyzer:
         text_lower = text.lower()
         words = text.split()
 
-        # Specificity signals
         has_numbers = bool(re.search(r'\d+', text))
         has_dates = bool(re.search(r'(january|february|march|april|may|june|july|august|september|october|november|december|q1|q2|q3|q4|\d{4})', text_lower))
 
-        # Examples and specifics
         specific_phrases = ["example", "specifically", "for instance", "such as", "case"]
         has_examples = sum(1 for phrase in specific_phrases if phrase in text_lower) > 0
 
-        # Abstract phrases
         abstract_phrases = ["things", "stuff", "generally", "usually", "sometimes", "sort of"]
         is_abstract = sum(1 for phrase in abstract_phrases if phrase in text_lower) >= 2
 
-        # Calculate score
-        score = 0.4  # Base
+        score = 0.4  
         if has_numbers:
             score += 0.2
         if has_dates:
