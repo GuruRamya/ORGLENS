@@ -25,7 +25,6 @@ def _get_fernet() -> Fernet:
             "TOKEN_ENCRYPTION_KEY is not set. "
             "Generate one with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
         )
-    # Accept raw bytes or base64 string
     try:
         return Fernet(key.encode() if isinstance(key, str) else key)
     except Exception:
