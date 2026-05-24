@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 load_dotenv()
-from celery import shared_task
+#from celery import shared_task
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -24,24 +24,24 @@ from app.services.confidence.positive_signals import PositiveSignalDetector
 from app.services.confidence.org_archetype import ArchetypeClassifier
 from app.services.confidence.confidence_framework import ConfidenceCalculator
 
-@shared_task(bind=True, max_retries=3)
-def analyze_organization(self, org_id: str, analysis_id: str):
-    """
-    Main task that orchestrates the entire analysis pipeline.
-    Runs async operations properly within the Celery task.
-    """
-    logger.info(f"Starting analysis for org {org_id}, analysis {analysis_id}")
+#@shared_task(bind=True, max_retries=3)
+#def analyze_organization(self, org_id: str, analysis_id: str):
+    #"""
+    #Main task that orchestrates the entire analysis pipeline.
+    #Runs async operations properly within the Celery task.
+    #"""
+    #logger.info(f"Starting analysis for org {org_id}, analysis {analysis_id}")
 
-    try:
-        result = asyncio.run(
-            _async_analysis_pipeline(org_id, analysis_id)
-        )
-        logger.info(f"Analysis completed for org {org_id}")
-        return result
+    #try:
+        #result = asyncio.run(
+            #_async_analysis_pipeline(org_id, analysis_id)
+        #)
+        #logger.info(f"Analysis completed for org {org_id}")
+        #return result
 
-    except Exception as exc:
-        logger.error(f"Analysis failed: {str(exc)}")
-        raise self.retry(exc=exc, countdown=60)
+    #except Exception as exc:
+        #logger.error(f"Analysis failed: {str(exc)}")
+        #raise self.retry(exc=exc, countdown=60)
 
 
 async def _async_analysis_pipeline(org_id: str, analysis_id: str):
