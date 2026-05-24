@@ -99,7 +99,6 @@ class TestPersonSignals:
         result = extractor.extract_all_signals(minimal_employees, minimal_messages, {})
         bob = result["person_signals"]["Bob Smith"]
         alice = result["person_signals"]["Alice Chen"]
-        # Bob sent "Final decision. Won't work." — conviction keywords
         assert bob["conviction_count"] >= 1
 
     def test_influence_score_nonnegative(self, extractor, minimal_employees, minimal_messages):
@@ -115,7 +114,6 @@ class TestPersonSignals:
     def test_objection_count(self, extractor, minimal_employees, minimal_messages):
         result = extractor.extract_all_signals(minimal_employees, minimal_messages, {})
         carol = result["person_signals"]["Carol Nair"]
-        # Carol sent "push back" — objection keyword
         assert carol["objection_count"] >= 1
 
 
