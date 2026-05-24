@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-  # ─── Database ──────────────────────────────────────────────────────────────
   postgres:
     image: postgres:15-alpine
     container_name: orglens_postgres
@@ -21,7 +20,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─── Redis ─────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: orglens_redis
@@ -37,7 +35,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ─── FastAPI Backend ────────────────────────────────────────────────────────
   backend:
     build:
       context: ../
@@ -67,7 +64,6 @@ services:
       timeout: 10s
       retries: 3
 
-  # ─── Celery Worker ──────────────────────────────────────────────────────────
   celery_worker:
     build:
       context: ../
@@ -91,7 +87,6 @@ services:
       redis:
         condition: service_healthy
 
-  # ─── Celery Beat (scheduled tasks) ─────────────────────────────────────────
   celery_beat:
     build:
       context: ../
@@ -109,7 +104,6 @@ services:
     depends_on:
       - redis
 
-  # ─── Flower (Celery monitoring UI) ─────────────────────────────────────────
   flower:
     build:
       context: ../
@@ -127,7 +121,6 @@ services:
     depends_on:
       - redis
 
-  # ─── Frontend ───────────────────────────────────────────────────────────────
   frontend:
     build:
       context: ../orglens-frontend
