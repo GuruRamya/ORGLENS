@@ -326,7 +326,7 @@ async def get_data_quality_card(
 ):
     from uuid import UUID
     
-        result = await db.execute(
+    result = await db.execute(
         select(AnalysisReport).where(AnalysisReport.id == UUID(analysis_id))
     )
     analysis = result.scalar_one_or_none()
