@@ -16,7 +16,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 
 
 def hash_password(password: str) -> str:
     password = password.strip()
