@@ -3,14 +3,12 @@ import { getToken, logout } from './lib/auth'
 const API_BASE = import.meta.env.VITE_API_URL || ''
 const BASE = `${API_BASE}/api`
 
-// Add auth interceptor
 axios.interceptors.request.use(config => {
   const token = getToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// Auto-logout on 401
 axios.interceptors.response.use(
   res => res,
   err => {
@@ -19,7 +17,6 @@ axios.interceptors.response.use(
   }
 )
 
-// Organization APIs
 export async function createOrganization(data) {
   const { data: response } = await axios.post(`${BASE}/organizations`, data)
   return response
@@ -31,7 +28,7 @@ export async function getOrganizations() {
     return data
   } catch (err) {
     if (err.response && err.response.status === 404) {
-      return []   // ✅ no orgs → return empty list
+      return []   
     }
     throw err
   }
@@ -47,7 +44,6 @@ export async function updateOrganization(orgId, data) {
   return response
 }
 
-// Data Upload APIs
 export async function uploadZip(orgId, file) {
   const formData = new FormData()
   formData.append('file', file)
@@ -91,7 +87,6 @@ export async function syncGmailData(orgId) {
   return data
 }
 
-// Analysis APIs
 export async function triggerAnalysis(orgId) {
   const { data } = await axios.post(`${BASE}/analysis/trigger/${orgId}`)
   return data
@@ -114,7 +109,6 @@ export async function listAnalyses(orgId, limit = 10) {
   return data
 }
 
-// Dashboard APIs
 export async function getDashboardReport(analysisId) {
   const { data } = await axios.get(`${BASE}/dashboard/report/${analysisId}`)
   return data
@@ -125,7 +119,6 @@ export async function getDashboardCard(analysisId, cardType) {
   return data
 }
 
-// OAuth APIs
 export async function getSlackAuthUrl(orgId) {
   const { data } = await axios.get(`${BASE}/auth/slack/authorize`, {
     params: { org_id: orgId }
@@ -167,31 +160,22 @@ export async function deleteOrganization(orgId) {
 }
 
 export default {
-  // Organizations
   createOrganization,
   getOrganizations,
   getOrganization,
   updateOrganization,
-  
-  // Upload
   uploadZip,
   uploadEmployeeCSV,
   uploadSlackExport,
   syncSlackData,
   uploadGmailExport,
   syncGmailData,
-  
-  // Analysis
   triggerAnalysis,
   getAnalysisStatus,
   getLatestAnalysis,
   listAnalyses,
-  
-  // Dashboard
   getDashboardReport,
   getDashboardCard,
-  
-  // Auth
   getSlackAuthUrl,
   getGmailAuthUrl,
   disconnectSlack,
