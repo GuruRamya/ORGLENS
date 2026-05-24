@@ -42,13 +42,11 @@ class DecisionExtractor:
         decisions = []
         text_lower = text.lower()
 
-        # Sentence splitting
         sentences = self._split_sentences(text)
 
         for sentence in sentences:
             sentence_lower = sentence.lower()
 
-            # Check for decision keywords
             for decision_type, keywords in self.DECISION_KEYWORDS.items():
                 for keyword in keywords:
                     if keyword in sentence_lower:
@@ -100,25 +98,21 @@ class DecisionExtractor:
         """
         text_lower = text.lower()
 
-        # Signals of strong conviction/authority
         conviction_phrases = [
             "must", "need to", "should", "have to", "requires",
             "i've decided", "we're going", "final decision"
         ]
 
-        # Signals of veto power
         veto_phrases = [
             "can't", "won't work", "we can't", "not possible", "blocked",
             "this won't", "that won't", "rejected"
         ]
 
-        # Signals of questions (softer influence)
         question_phrases = [
             "have you considered", "what if", "did you think about",
             "question is", "wondering", "curious"
         ]
 
-        # Signals of suggestions (weakest influence)
         suggestion_phrases = [
             "maybe", "perhaps", "could", "might", "think about",
             "should consider", "might want to"
@@ -129,7 +123,6 @@ class DecisionExtractor:
         question_score = sum(1 for phrase in question_phrases if phrase in text_lower) / len(question_phrases)
         suggestion_score = sum(1 for phrase in suggestion_phrases if phrase in text_lower) / len(suggestion_phrases)
 
-        # Influence signal (0-1)
         influence_signal = min(
             max(conviction_score, veto_score, question_score, suggestion_score),
             1.0
@@ -144,7 +137,6 @@ class DecisionExtractor:
             "tone": self._determine_tone(conviction_score, veto_score, question_score),
         }
 
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _split_sentences(self, text: str) -> list[str]:
         """Split text into sentences"""
@@ -152,7 +144,6 @@ class DecisionExtractor:
             doc = self.nlp(text)
             return [sent.text for sent in doc.sents]
         else:
-            # Fallback: simple regex split
             sentences = re.split(r'[.!?]+', text)
             return [s.strip() for s in sentences if s.strip()]
 
@@ -160,15 +151,12 @@ class DecisionExtractor:
         """Score confidence that this is a real decision (0-1)"""
         score = 0.5
 
-        # Length signal: longer sentences more likely to contain decisions
         if len(sentence.split()) > 5:
             score += 0.2
 
-        # Subject presence: "we decided", "we approved" = higher confidence
         if any(subj in sentence.lower() for subj in ["we ", "i ", "they ", "the team"]):
             score += 0.2
 
-        # Time reference: "just", "now", "today" = higher confidence
         if any(time in sentence.lower() for time in ["just", "now", "today", "yesterday"]):
             score += 0.1
 
@@ -179,12 +167,10 @@ class DecisionExtractor:
         sentence_lower = sentence.lower()
         score = 0.4
 
-        # "I'm concerned" > "I wonder if"
         strong_indicators = ["concern", "problem", "risk", "against", "shouldn't"]
         if any(ind in sentence_lower for ind in strong_indicators):
             score += 0.4
 
-        # "We can't" > "We might not"
         if "can't" in sentence_lower or "won't" in sentence_lower:
             score += 0.2
 
