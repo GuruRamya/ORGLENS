@@ -16,8 +16,8 @@ class ResilienceCalculator:
         self,
         single_points_of_failure: list[dict],
         knowledge_silos: list[dict],
-        decision_distribution: dict,  # {person: decisions_made_percent}
-        department_cross_training: dict,  # {department: cross_trained_percent}
+        decision_distribution: dict,  
+        department_cross_training: dict, 
     ) -> float:
         """
         Calculate overall resilience score (0-10).
@@ -25,22 +25,18 @@ class ResilienceCalculator:
         """
         score = 10.0
 
-        # Factor 1: Single points of failure (each costs 2-3 points)
         for spof in single_points_of_failure:
-            impact = spof.get("impact_if_leaves", 0) / 10.0  # Normalize to 0-1
-            score -= (impact * 3)  # Can lose up to 3 points per person
+            impact = spof.get("impact_if_leaves", 0) / 10.0  
+            score -= (impact * 3)  
 
-        # Factor 2: Knowledge silos (each costs 1 point)
         for silo in knowledge_silos:
             if not silo.get("backup_available", False):
                 score -= 1
 
-        # Factor 3: Decision concentration
         max_decision_share = max(decision_distribution.values()) if decision_distribution else 0.5
         decision_concentration_penalty = (max_decision_share - 0.2) * 5  # 0-5 point penalty
         score -= decision_concentration_penalty
 
-        # Factor 4: Cross-training (bonus if good)
         avg_cross_training = np.mean(list(department_cross_training.values())) if department_cross_training else 0
         if avg_cross_training > 0.5:
             score += 1.5
@@ -49,9 +45,9 @@ class ResilienceCalculator:
 
     def identify_single_points_of_failure(
         self,
-        employees: dict,  # {emp_id: {influence, knowledge_domains, tenure, ...}}
-        decision_data: dict,  # {emp_id: decisions_made_count}
-        knowledge_owners: dict,  # {domain: [owners]}
+        employees: dict,  
+        decision_data: dict,  
+        knowledge_owners: dict,  
     ) -> list[dict]:
         """
         Identify employees whose loss would severely impact organization.
@@ -60,34 +56,28 @@ class ResilienceCalculator:
         """
         spofs = []
 
-        # Check high-influence people
         for emp_id, emp_data in employees.items():
             influence_score = emp_data.get("influence_score", 0)
             decisions_made = decision_data.get(emp_id, 0)
             domains_owned = []
 
-            # Count how many domains they uniquely own
             for domain, owners in knowledge_owners.items():
                 if len([o for o in owners if o == emp_id]) == 1 and len(owners) == 1:
                     domains_owned.append(domain)
 
-            # Calculate impact
-            influence_impact = influence_score / 10.0 * 5  # 0-5
-            decision_impact = min(decisions_made / 100.0 * 3, 3)  # 0-3
-            silo_impact = len(domains_owned) * 2  # 0-2+ per domain
+            influence_impact = influence_score / 10.0 * 5 
+            decision_impact = min(decisions_made / 100.0 * 3, 3) 
+            silo_impact = len(domains_owned) * 2  
 
             total_impact = influence_impact + decision_impact + silo_impact
 
             if total_impact > 3.0:
-                # Calculate departure probability
                 tenure = emp_data.get("tenure_months", 36)
-                departure_prob = 0.15  # Base rate
+                departure_prob = 0.15  
 
-                # Higher influence, higher flight risk
                 if influence_score > 6:
                     departure_prob += 0.15
 
-                # Isolated experts at higher risk
                 if len(domains_owned) > 0 and influence_score > 5:
                     departure_prob += 0.10
 
@@ -110,7 +100,7 @@ class ResilienceCalculator:
 
     def identify_knowledge_silos(
         self,
-        knowledge_owners: dict,  # {domain: [owner_ids]}
+        knowledge_owners: dict, 
         backup_assignments: Optional[dict] = None,
     ) -> list[dict]:
         """
@@ -178,12 +168,10 @@ class ResilienceCalculator:
             trained_domains = successor.get("trained_domains", [])
             key_domains = key_person.get("domains", [])
 
-            # How many key domains are they trained in?
             domain_coverage = len(
                 [d for d in key_domains if d in trained_domains]
             ) / max(len(key_domains), 1)
 
-            # Experience level
             experience_multiplier = min(successor.get("experience_years", 0) / 5, 1.0)
 
             readiness = (domain_coverage + experience_multiplier) / 2
@@ -200,7 +188,7 @@ class ResilienceCalculator:
         partially_ready = [s for s in readiness_scores if 0.4 < s["readiness_score"] <= 0.7]
 
         if ready_successors:
-            overall_readiness = 0.9  # Ready to transition
+            overall_readiness = 0.9  
             timeline = "Immediately"
         elif partially_ready:
             overall_readiness = 0.5
@@ -218,7 +206,6 @@ class ResilienceCalculator:
             "training_plan": self._generate_training_plan(key_person, partially_ready),
         }
 
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _impact_to_risk_level(self, impact: float) -> str:
         """Convert impact score to risk level"""
