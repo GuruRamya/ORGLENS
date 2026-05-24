@@ -1,7 +1,11 @@
 #!/bin/bash
 
-celery -A app.workers.celery_app worker --loglevel=info --concurrency=1 --detach
+echo "Starting OrgLens..."
+echo "PORT is: $PORT"
 
-sleep 2
+nohup celery -A app.workers.celery_app worker --loglevel=info --concurrency=1 > /tmp/celery.log 2>&1 &
 
-exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+echo "Celery started with PID $!"
+
+echo "Starting uvicorn on port $PORT"
+exec uvicorn app.main:app --host 0.0.0.0 --port $PORT
