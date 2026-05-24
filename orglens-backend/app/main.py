@@ -9,7 +9,6 @@ from app.config import settings
 from app.database import create_tables
 from app.routers import auth, upload, analysis, dashboard, organizations
 from app.routers import demo
-# Configure logging
 logger.remove()
 logger.add(
     "logs/orglens.log",
@@ -23,10 +22,8 @@ logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     logger.info("🚀 Starting OrgLens...")
     
-    # Validate required env vars
     if not settings.GROQ_API_KEY:
         logger.error("❌ GROQ_API_KEY not set. Analysis will fail.")
         raise RuntimeError("GROQ_API_KEY environment variable is required")
@@ -35,7 +32,6 @@ async def lifespan(app: FastAPI):
     await create_tables()
     logger.info("✅ Database tables initialized")
     yield
-    # Shutdown
     logger.info("🛑 Shutting down OrgLens...")
 
 
@@ -46,7 +42,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_url, "http://localhost:3000", "http://localhost:5173", "http://localhost:5174", "https://orglens-mu.vercel.app" ],
@@ -55,7 +50,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(upload.router, prefix="/api/upload", tags=["upload"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
