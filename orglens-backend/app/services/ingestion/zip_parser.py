@@ -29,7 +29,7 @@ class ParsedEmployee:
 
 class ParsedMessage:
     def __init__(self, **kwargs):
-        self.source: str = kwargs.get("source", "upload")   # slack | gmail | upload
+        self.source: str = kwargs.get("source", "upload")   
         self.external_id: str | None = kwargs.get("external_id")
         self.sender_raw: str = kwargs.get("sender_raw", "")
         self.channel_or_thread: str | None = kwargs.get("channel_or_thread")
@@ -42,7 +42,7 @@ class ParsedNarrative:
     def __init__(self):
         self.mission_statement: str | None = None
         self.values: list[str] = []
-        self.claims: list[str] = []       # individual claim sentences
+        self.claims: list[str] = []       
 
 
 class IngestionResult:
@@ -157,7 +157,6 @@ class ZipParser:
 
             df = pd.read_excel(path)
 
-            # Optional normalization
             df = df.rename(columns={
                 'Employee Name': 'name',
                 'Email': 'email',
@@ -185,7 +184,7 @@ class ZipParser:
         File name = channel name. Content = list of message objects.
         """
         try:
-            channel_name = path.stem   # file name without extension = channel name
+            channel_name = path.stem   
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
 
@@ -230,7 +229,6 @@ class ZipParser:
                 sender = msg.get("from", "")
                 date_str = msg.get("date", "")
 
-                # Extract plain text body
                 body = ""
                 if msg.is_multipart():
                     for part in msg.walk():
@@ -271,7 +269,6 @@ class ZipParser:
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
                 text = f.read()
-            # Treat each non-empty line as a claim
             lines = [l.strip() for l in text.split("\n") if len(l.strip()) > 20]
             result.narrative.claims.extend(lines)
             if not result.narrative.mission_statement and lines:
@@ -280,7 +277,6 @@ class ZipParser:
         except Exception as e:
             result.errors.append(f"Error parsing narrative {path.name}: {str(e)}")
 
-    # ─── Helpers ─────────────────────────────────────────────────────────────
 
     def _infer_level(self, title: str) -> str:
         title_lower = title.lower()
@@ -310,7 +306,6 @@ class ZipParser:
             return datetime.utcnow()
 
 
-# Single file upload (not ZIP)
 class SingleFileParser:
     def __init__(self):
         self._zip_parser = ZipParser()
