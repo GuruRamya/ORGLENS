@@ -325,6 +325,7 @@ async def get_data_quality_card(
     current_user: User = Depends(get_current_user)
 ):
     from uuid import UUID
+    
         result = await db.execute(
         select(AnalysisReport).where(AnalysisReport.id == UUID(analysis_id))
     )
@@ -345,7 +346,8 @@ async def get_data_quality_card(
     conf_level = confidence_metrics.get_confidence_level()
     conf_pct = int(confidence_metrics.calculate_base_confidence() * 100)
     warnings = confidence_metrics.get_warnings()
-        coverage_func = {
+
+    coverage_func = {
         func: int(cov * 100)
         for func, cov in confidence_metrics.coverage_by_function.items()
     }
