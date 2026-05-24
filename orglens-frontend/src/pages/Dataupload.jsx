@@ -28,7 +28,6 @@ export default function DataUpload() {
   useEffect(() => {
     loadOrganization()
   }, [orgId])
-  // Check for OAuth success/error in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const success = params.get('success')
@@ -37,13 +36,13 @@ export default function DataUpload() {
     if (success === 'slack_connected') {
       setSuccess('✅ Slack connected successfully! Now you can sync data.')
       window.history.replaceState({}, document.title, window.location.pathname)
-      loadOrganization() // Reload org to show connected status
+      loadOrganization() 
     }
 
     if (success === 'gmail_connected') {
       setSuccess('✅ Gmail connected successfully! Now you can sync data.')
       window.history.replaceState({}, document.title, window.location.pathname)
-      loadOrganization() // Reload org to show connected status
+      loadOrganization()
     }
 
     if (error) {
@@ -105,7 +104,6 @@ export default function DataUpload() {
     setSuccess('Data uploaded successfully! Starting analysis...')
     setFile(null)
     
-    // Trigger analysis after upload
     const analysisResult = await triggerAnalysis(orgId)
     setAnalysisId(analysisResult.analysis_id)
     setStatus('running')
@@ -116,7 +114,6 @@ export default function DataUpload() {
           setProgress(statusData.progress || 0)
           setStatus(statusData.status)
           
-          // Analysis complete!
           if (statusData.status === 'completed') {
             clearInterval(interval)
             setProgress(100)
@@ -147,7 +144,6 @@ export default function DataUpload() {
   setError('')
   try {
     const response = await getSlackAuthUrl(orgId)
-    // Backend returns { url: "..." } not { auth_url: "..." }
     const redirectUrl = response.url || response.auth_url
     if (!redirectUrl) {
       setError('No redirect URL received from server')
@@ -207,7 +203,6 @@ export default function DataUpload() {
         />
 
         <div className="space-y-6">
-          {/* Upload Method Selection */}
           <div className="rounded-2xl border border-neutral-200 bg-white p-8 backdrop-blur-xl shadow-neo-md">
             <div className="flex items-center gap-3 mb-6 pb-6 border-b border-neutral-200">
               <div className="w-10 h-10 rounded-lg bg-maroon-600 flex items-center justify-center text-white font-bold">
@@ -256,7 +251,6 @@ export default function DataUpload() {
             </div>
           </div>
 
-          {/* File Upload / OAuth Section */}
           {['ZIP Archive', 'Employee CSV', 'Slack Export', 'Gmail Export'].includes(uploadMethod) && (
             <div className="rounded-2xl border border-neutral-200 bg-white p-8 backdrop-blur-xl shadow-neo-md">
               <div className="flex items-center gap-3 mb-6 pb-6 border-b border-neutral-200">
@@ -352,7 +346,6 @@ export default function DataUpload() {
             </div>
           )}
 
-          {/* Format Examples */}
           {['ZIP Archive', 'Employee CSV', 'Slack Export', 'Gmail Export'].includes(uploadMethod) && (
             <div className="rounded-2xl border border-neutral-200 bg-white p-8 backdrop-blur-xl shadow-neo-md">
               <div className="flex items-center gap-3 mb-6 pb-6 border-b border-neutral-200">
@@ -415,11 +408,9 @@ Alice Johnson,alice@company.com,HR Lead,People,CEO,24`}
             </div>
           )}
 
-          {/* Messages */}
           {error && <AlertBox type="error" title="Upload Error" message={error} />}
           {success && <AlertBox type="success" title="Success!" message={success} />}
 
-          {/* Submit Button - Only for file uploads */}
           {['ZIP Archive', 'Employee CSV', 'Slack Export', 'Gmail Export'].includes(uploadMethod) && (
             <AnalyzeButton
               onClick={handleUpload}
@@ -429,7 +420,6 @@ Alice Johnson,alice@company.com,HR Lead,People,CEO,24`}
             />
           )}
 
-          {/* Info */}
           <AlertBox 
             type="info"
             message="After upload/connection, we'll analyze communication patterns, influence networks, power dynamics, organizational health, and provide actionable recommendations."
