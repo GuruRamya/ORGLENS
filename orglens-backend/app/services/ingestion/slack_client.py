@@ -21,7 +21,6 @@ class SlackClient:
         user_cache = {}
 
         try:
-            # Get all public channels
             channels_result = await self._get_channels()
             for channel_id, channel_name in channels_result:
                 await self._fetch_channel_messages(channel_id, channel_name, result, user_cache)
@@ -79,7 +78,6 @@ class SlackClient:
                     except (ValueError, OSError):
                         ts = datetime.utcnow()
 
-                    # Resolve Slack user ID → real name
                     slack_user_id = msg.get("user", "")
 
                     if slack_user_id and slack_user_id not in user_cache:
