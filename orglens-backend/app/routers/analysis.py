@@ -86,27 +86,27 @@ async def get_analysis_status(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-async def get_redis():
-    global _redis_client
+#async def get_redis():
+    #global _redis_client
 
-    print("GET REDIS CALLED")
-    if _redis_client is None and REDIS_AVAILABLE:
-        import os
-        import ssl
-        url = os.getenv("redis_url")
-        print("REDIS URL:", url)
-        try:
-            _redis_client = aioredis.from_url(
-                url,
-                decode_responses=True,
-                ssl_cert_reqs=ssl.CERT_NONE
-            )
-            await _redis_client.ping()
-            print("REDIS CONNECTED")
-        except Exception as e:
-            print("REDIS FAILED:", e)
-            _redis_client = None
-    return _redis_client
+    #print("GET REDIS CALLED")
+    #if _redis_client is None and REDIS_AVAILABLE:
+        #import os
+        #import ssl
+        #url = os.getenv("redis_url")
+        #print("REDIS URL:", url)
+        #try:
+            #_redis_client = aioredis.from_url(
+                #url,
+                #decode_responses=True,
+                #ssl_cert_reqs=ssl.CERT_NONE
+            #)
+            #await _redis_client.ping()
+            #print("REDIS CONNECTED")
+        #except Exception as e:
+            #print("REDIS FAILED:", e)
+            #_redis_client = None
+    #return _redis_client
 
 @router.get("/latest/{org_id}")
 async def get_latest_analysis(
@@ -161,16 +161,16 @@ async def list_analyses(
         }
         for a in analyses
     ]
-from app.services.security.rate_limiter import rate_limit
+#from app.services.security.rate_limiter import rate_limit
 
-@router.get("/test-rate-limit")
-async def test(
-    _: None = Depends(
-        rate_limit(
-            "analysis",
-            max_calls=3,
-            window_seconds=60
-        )
-    )
-):
-    return {"message": "working"}
+#@router.get("/test-rate-limit")
+#async def test(
+    #_: None = Depends(
+        #rate_limit(
+            #"analysis",
+            #max_calls=3,
+            #window_seconds=60
+        #)
+    #)
+#):
+    #return {"message": "working"}
