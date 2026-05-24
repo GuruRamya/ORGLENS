@@ -13,8 +13,8 @@ class TrustGapCalculator:
 
     def calculate_trust_gap(
         self,
-        org_claims: dict,  # {claim: description}
-        actual_data: dict,  # {metric: actual_value}
+        org_claims: dict,  
+        actual_data: dict, 
     ) -> dict:
         """
         Calculate overall trust gap score and identify specific gaps.
@@ -39,31 +39,26 @@ class TrustGapCalculator:
         claims_analysis = []
         total_gap = 0
 
-        # Transparency vs. reality
         if "transparency" in org_claims or "transparent" in str(org_claims).lower():
             gap = self._analyze_transparency_claim(actual_data)
             claims_analysis.append(gap)
             total_gap += gap["gap"]
 
-        # Meritocracy vs. reality
         if "merit" in str(org_claims).lower() or "hiring" in actual_data:
             gap = self._analyze_meritocracy_claim(actual_data)
             claims_analysis.append(gap)
             total_gap += gap["gap"]
 
-        # Work-life balance vs. reality
         if "balance" in str(org_claims).lower() or "meeting" in actual_data:
             gap = self._analyze_balance_claim(actual_data)
             claims_analysis.append(gap)
             total_gap += gap["gap"]
 
-        # Innovation vs. reality
         if "innovation" in str(org_claims).lower() or "risky" in actual_data:
             gap = self._analyze_innovation_claim(actual_data)
             claims_analysis.append(gap)
             total_gap += gap["gap"]
 
-        # Overall score
         if claims_analysis:
             overall_gap = total_gap / len(claims_analysis)
         else:
@@ -75,7 +70,7 @@ class TrustGapCalculator:
             "claims_analyzed": len(claims_analysis),
             "top_gaps": sorted(claims_analysis, key=lambda x: x["gap"], reverse=True)[:3],
             "all_gaps": claims_analysis,
-            "alignment_score": 10.0 - min(overall_gap, 10.0),  # Inverse: higher alignment = lower gap
+            "alignment_score": 10.0 - min(overall_gap, 10.0), 
         }
 
     def analyze_claim(
@@ -136,27 +131,25 @@ class TrustGapCalculator:
         else:
             return "stable"
 
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _analyze_transparency_claim(self, actual_data: dict) -> dict:
         """
         Check: "We have transparent decision-making"
         Reality indicators: approval chain length, meeting vs. decision time, etc.
         """
-        gap = 5.0  # Base
+        gap = 5.0  
 
         approval_chain = actual_data.get("approval_chain_length", 0)
         if approval_chain > 10:
-            gap = 8.5  # Very non-transparent
+            gap = 8.5 
         elif approval_chain > 5:
             gap = 6.0
         elif approval_chain <= 2:
-            gap = 2.0  # Very transparent
+            gap = 2.0  
 
-        # Check if decisions made in meetings vs. before meetings
         decision_timing = actual_data.get("decisions_made_before_meetings_percent", 0)
         if decision_timing > 0.5:
-            gap += 2.0  # If 50%+ decisions made before meetings, add to gap
+            gap += 2.0 
 
         return {
             "claim": "Transparent decision-making",
@@ -177,7 +170,7 @@ class TrustGapCalculator:
 
         referral_hire_percent = actual_data.get("referral_hire_percent", 0.5)
         if referral_hire_percent > 0.7:
-            gap = 8.0  # Heavy on referrals = not meritocratic
+            gap = 8.0  
         elif referral_hire_percent > 0.5:
             gap = 6.0
         elif referral_hire_percent < 0.3:
@@ -185,7 +178,7 @@ class TrustGapCalculator:
 
         internal_promo_percent = actual_data.get("internal_promotion_percent", 0.5)
         if internal_promo_percent < 0.2:
-            gap += 2.0  # Promoting externally, ceiling for internals
+            gap += 2.0  
 
         return {
             "claim": "Merit-based hiring and promotion",
@@ -235,15 +228,15 @@ class TrustGapCalculator:
 
         risky_approved = actual_data.get("risky_projects_approved_percent", 0.5)
         if risky_approved < 0.2:
-            gap = 8.0  # Very risk-averse
+            gap = 8.0 
         elif risky_approved < 0.4:
             gap = 6.0
         elif risky_approved > 0.7:
-            gap = 2.0  # Very risk-taking
+            gap = 2.0  
 
         decision_velocity = actual_data.get("avg_decision_days", 20)
         if decision_velocity > 30:
-            gap += 2.0  # Slow = not moving fast
+            gap += 2.0 
 
         return {
             "claim": "Innovation-first, move fast",
