@@ -1,20 +1,3 @@
-/**
- * /demo  — Public demo dashboard for recruiters.
- *
- * This page:
- * - Requires NO login.
- * - Calls GET /api/demo/report (public endpoint).
- * - Renders the full Dashboard UI read-only.
- * - Shows a "Demo Mode" banner explaining what recruiters are looking at.
- *
- * Setup:
- *   1. Run  python seed_demo.py --zip yourdata.zip
- *   2. Copy the printed env vars into .env:
- *        VITE_DEMO_ORG_ID=...
- *        VITE_DEMO_ANALYSIS_ID=...
- *   3. Add  <Route path="/demo" element={<DemoPage />} />  to App.jsx
- */
-
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
@@ -23,14 +6,12 @@ import {
   TrendingUp, TrendingDown, Minus, Zap, Bot, X, Send, User
 } from 'lucide-react'
 
-// ─── API ──────────────────────────────────────────────────────────────────────
 
 async function fetchDemoReport() {
   const { data } = await axios.get('/api/demo/report')
   return data
 }
 
-// ─── Colour helpers (same as Dashboard.jsx) ───────────────────────────────────
 
 function scoreColor(score, invert = false) {
   const s = invert ? 10 - score : score
@@ -77,7 +58,6 @@ function Badge({ label, type = 'neutral' }) {
   )
 }
 
-// ─── Card shell ───────────────────────────────────────────────────────────────
 
 function AnalysisCard({ icon, title, subtitle, score, scoreInvert, expanded, onToggle, children }) {
   return (
@@ -112,7 +92,6 @@ function AnalysisCard({ icon, title, subtitle, score, scoreInvert, expanded, onT
   )
 }
 
-// ─── Mini card renders (condensed from Dashboard.jsx) ────────────────────────
 
 function OrgHealthCard({ data }) {
   if (!data) return null
@@ -498,7 +477,6 @@ function RecommendationsCard({ data }) {
   )
 }
 
-// ─── Minimal AI chat (no auth — uses demo analysis_id) ───────────────────────
 
 function DemoChat({ dashboard }) {
   const [open, setOpen] = useState(false)
@@ -536,12 +514,10 @@ function DemoChat({ dashboard }) {
         { role: 'user', content: userMsg }
       ]
 
-      // Try to use the real chat endpoint — falls back to a helpful message if not available
       try {
         const { data } = await axios.post(`/api/dashboard/chat/${analysisId}`, { messages: apiMessages, context })
         setMessages(prev => [...prev, { role: 'assistant', text: data.reply }])
       } catch {
-        // Provide a helpful fallback without requiring auth
         const fallbacks = [
           `The analysis shows an org health score of ${dashboard?.org_health?.org_health_score?.toFixed(1)}/10. The main issues are: ${(dashboard?.system_diagnosis?.root_causes || []).map(r => r.issue).slice(0, 2).join(', ')}.`,
           `The biggest trust gap is: "${(dashboard?.trust_gap?.top_gaps || [])[0]?.claim || 'not specified'}". Reality: ${(dashboard?.trust_gap?.top_gaps || [])[0]?.reality || 'see analysis'}.`,
@@ -619,7 +595,6 @@ function DemoChat({ dashboard }) {
   )
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function DemoPage() {
   const [loading, setLoading] = useState(true)
@@ -720,7 +695,6 @@ export default function DemoPage() {
           </div>
         </div>
 
-        {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           {[
             { label: 'Org Health',         value: d.org_health?.org_health_score?.toFixed(1),    unit: '/10',   invert: false },
@@ -737,7 +711,6 @@ export default function DemoPage() {
           ))}
         </div>
 
-        {/* Cards */}
         <div className="space-y-3">
           {cards.map(({ id, icon, title, subtitle, score, scoreInvert, content }) => (
             <AnalysisCard key={id} icon={icon} title={title} subtitle={subtitle}
@@ -748,7 +721,6 @@ export default function DemoPage() {
           ))}
         </div>
 
-        {/* Deep dive button */}
         <div className="flex justify-center mt-8 mb-8">
           <button
             onClick={() => navigate(`/org/${d.org_id}/dashboard/${d.analysis_id}/deep-dive`)}
@@ -757,7 +729,6 @@ export default function DemoPage() {
           </button>
         </div>
 
-        {/* CTA */}
         <div className="mt-8 rounded-2xl border border-maroon-200 bg-maroon-50 p-8 text-center space-y-4">
           <h3 className="font-bold text-xl text-neutral-900">Ready to analyze your own organization?</h3>
           <p className="text-neutral-600 text-sm">Upload your Slack exports, Gmail data, or employee CSV — get insights in minutes.</p>
