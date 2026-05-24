@@ -31,30 +31,23 @@ class RecommendationEngine:
         """
         recommendations = []
 
-        # TRUST GAP recommendations
         if diagnostics.get("trust_gap", {}).get("trust_gap_score", 0) > 6:
             recommendations.extend(self._trust_gap_recommendations(diagnostics["trust_gap"]))
 
-        # RESILIENCE recommendations
         if diagnostics.get("resilience", {}).get("single_points_of_failure"):
             recommendations.extend(self._resilience_recommendations(diagnostics["resilience"]))
 
-        # DECISION VELOCITY recommendations
         if diagnostics.get("decision_velocity", {}).get("avg_days", 0) > 20:
             recommendations.extend(self._velocity_recommendations(diagnostics["decision_velocity"]))
 
-        # POWER STRUCTURE recommendations
         if diagnostics.get("power_structure"):
             recommendations.extend(self._power_structure_recommendations(diagnostics["power_structure"]))
 
-        # Score each recommendation
         for rec in recommendations:
             rec["priority_rank"] = self._calculate_priority(rec)
 
-        # Sort by priority
         recommendations = sorted(recommendations, key=lambda x: x["priority_rank"])
 
-        # Add rank numbers
         for idx, rec in enumerate(recommendations, 1):
             rec["rank"] = idx
 
@@ -66,7 +59,6 @@ class RecommendationEngine:
 
         gap_score = trust_gap_data.get("trust_gap_score", 5)
 
-        # Recommendation 1: Transparency fix
         recs.append({
             "id": "trust_gap_1",
             "title": "Formalize decision-making process",
@@ -88,7 +80,6 @@ class RecommendationEngine:
             ],
         })
 
-        # Recommendation 2: Alignment fix
         recs.append({
             "id": "trust_gap_2",
             "title": "Realign organizational systems to stated values",
@@ -146,7 +137,7 @@ class RecommendationEngine:
         if silos:
             critical_silos = [s for s in silos if s.get("is_at_risk")]
 
-            for silo in critical_silos[:1]:  # Top silo
+            for silo in critical_silos[:1]: 
                 recs.append({
                     "id": "resilience_2",
                     "title": f"Eliminate knowledge silo: {silo.get('domain')}",
@@ -231,7 +222,6 @@ class RecommendationEngine:
 
         nodes = power_structure.get("nodes", [])
 
-        # Identify hidden powers
         hidden_powers = [n for n in nodes if n.get("type") == "hidden_power"]
         ignored_authorities = [n for n in nodes if n.get("type") == "ignored_authority"]
 
@@ -287,7 +277,6 @@ class RecommendationEngine:
 
         return recs
 
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _calculate_priority(self, recommendation: dict) -> float:
         """
@@ -296,22 +285,18 @@ class RecommendationEngine:
         """
         score = 0.0
 
-        # Impact (0-3 points)
         impact_map = {"critical": 3, "high": 2, "medium": 1, "low": 0}
         score += impact_map.get(recommendation.get("impact", "low"), 1)
 
-        # Effort (0-2 points: easier = higher priority)
         effort_map = {"low": 2, "medium": 1, "high": 0}
         score += effort_map.get(recommendation.get("effort", "medium"), 1)
 
-        # Timeline (0-1 points: faster = higher priority)
         timeline = recommendation.get("timeline_weeks", 10)
         if timeline <= 4:
             score += 1.0
         elif timeline <= 8:
             score += 0.5
 
-        # Confidence (multiply final score)
         confidence = recommendation.get("confidence", 0.7)
         score *= confidence
 
