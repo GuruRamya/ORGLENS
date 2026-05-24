@@ -1,24 +1,3 @@
-#!/usr/bin/env python3
-"""
-OrgLens Demo Seed Script
-========================
-Run this ONCE against your backend to upload your ZIP and create a permanent demo org.
-
-Usage:
-    python seed_demo.py --zip path/to/your/data.zip --api http://localhost:8000
-
-What it does:
-1. Registers a demo admin user (or reuses existing)
-2. Creates a demo organization
-3. Uploads your ZIP file
-4. Triggers and waits for analysis to complete
-5. Saves the demo org ID and analysis ID to demo_config.json
-   (you copy these into your .env / frontend config)
-
-Requirements:
-    pip install requests
-"""
-
 import argparse
 import json
 import os
@@ -28,8 +7,6 @@ from pathlib import Path
 
 import requests
 
-
-# ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def log(msg, level="INFO"):
     prefix = {"INFO": "ℹ️ ", "OK": "✅ ", "WARN": "⚠️ ", "ERR": "❌ ", "WAIT": "⏳ "}
@@ -47,8 +24,6 @@ def get(base, path, **kwargs):
     r.raise_for_status()
     return r.json()
 
-
-# ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(description="Seed OrgLens demo organization")
@@ -75,7 +50,6 @@ def main():
     BASE = args.api.rstrip("/")
     log(f"Targeting API: {BASE}")
 
-    # ── Step 1: Health check ────────────────────────────────────────────────
     try:
         r = requests.get(f"{BASE}/health", timeout=5)
         r.raise_for_status()
@@ -84,7 +58,6 @@ def main():
         log(f"Cannot reach backend: {e}", "ERR")
         sys.exit(1)
 
-    # ── Step 2: Register or login ───────────────────────────────────────────
     token = None
     log(f"Registering demo user: {args.email}")
     try:
@@ -110,12 +83,10 @@ def main():
 
     headers = {"Authorization": f"Bearer {token}"}
 
-    # ── Step 3: Create demo org (or reuse) ──────────────────────────────────
     log("Creating demo organization…")
     org_id = None
 
     try:
-        # Check if demo org already exists
         orgs = get(BASE, "/api/organizations", headers=headers)
         for org in orgs:
             if org.get("name") == args.org_name:
@@ -135,7 +106,6 @@ def main():
         org_id = org_data["id"]
         log(f"Demo org created: {org_id}", "OK")
 
-    # ── Step 4: Upload ZIP ──────────────────────────────────────────────────
     log(f"Uploading ZIP: {zip_path.name} ({zip_path.stat().st_size // 1024} KB)…")
     with open(zip_path, "rb") as f:
         upload_resp = requests.post(
@@ -149,16 +119,14 @@ def main():
     log(f"Upload complete: {upload_data.get('message', 'success')}", "OK")
     log(f"  Records parsed: {upload_data.get('records_parsed', '?')}")
 
-    # ── Step 5: Trigger analysis ────────────────────────────────────────────
     log("Triggering analysis…")
     analysis_resp = post(BASE, f"/api/analysis/trigger/{org_id}", headers=headers)
     analysis_id = analysis_resp["analysis_id"]
     log(f"Analysis queued: {analysis_id}", "OK")
     log("Estimated time: 3–8 minutes depending on data size", "WAIT")
 
-    # ── Step 6: Poll until complete ─────────────────────────────────────────
     log("Waiting for analysis to complete…", "WAIT")
-    max_wait = 60 * 20  # 20 minutes max
+    max_wait = 60 * 20  
     poll_interval = 10
     elapsed = 0
     final_status = None
@@ -186,10 +154,8 @@ def main():
     if final_status != "completed":
         log("Analysis did not complete in time. Check Celery worker logs.", "ERR")
         log(f"You can still set org_id={org_id} / analysis_id={analysis_id} manually and retry.", "WARN")
-        # Still save partial config
         final_status = final_status or "pending"
 
-    # ── Step 7: Save config ─────────────────────────────────────────────────
     config = {
         "demo_org_id": org_id,
         "demo_analysis_id": analysis_id,
