@@ -85,20 +85,16 @@ export default function Organizations() {
     }
   }
   
-  //─── Helper: Determine where to route based on org type ───────────
   function getOrgLink(orgId) {
-    // If it's the demo org, go to dashboard
     if (orgId === DEMO_ORG_ID && DEMO_ANALYSIS_ID) {
       return `/org/${orgId}/dashboard/${DEMO_ANALYSIS_ID}`
     }
-    // Otherwise, go to upload page
     return `/org/${orgId}/upload`
   }
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
 
-      {/* Background decoration */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-maroon-100/20 rounded-full blur-3xl animate-pulse" />
 
@@ -134,7 +130,6 @@ export default function Organizations() {
         ) : (
           <div className="space-y-6">
 
-            {/* Create New */}
             <Link
               to="/org/new"
               className="flex items-center justify-between p-6 rounded-2xl border border-dashed border-maroon-300 bg-maroon-50 hover:bg-maroon-100 transition-all duration-300 shadow-neo-sm hover:shadow-neo-md group"
@@ -159,7 +154,6 @@ export default function Organizations() {
               <ChevronRight className="text-maroon-600 group-hover:translate-x-1 transition-transform" />
             </Link>
 
-            {/* Empty State */}
             {orgs.length === 0 ? (
               <div className="text-center py-20">
 
@@ -179,7 +173,6 @@ export default function Organizations() {
 
             ) : (
 
-              /* Organizations Grid */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {orgs.map(org => (
@@ -194,7 +187,6 @@ export default function Organizations() {
                       className="block p-6 rounded-2xl border border-neutral-200 bg-white hover:border-maroon-300 hover:shadow-neo-lg shadow-neo-sm transition-all duration-300"
                     >
 
-                      {/* Header */}
                       <div className="flex items-start justify-between mb-4 pb-4 border-b border-neutral-200">
 
                         <div className="flex-1 min-w-0 pr-4">
@@ -212,7 +204,6 @@ export default function Organizations() {
                         </div>
                       </div>
 
-                      {/* Details */}
                       <div className="space-y-3 mb-4">
 
                         <div className="flex items-center gap-2">
@@ -256,7 +247,6 @@ export default function Organizations() {
                         </div>
                       </div>
 
-                      {/* Footer */}
                       <div className="pt-4 border-t border-neutral-200 flex items-center justify-between">
 
                         <p className="text-xs text-neutral-500">
@@ -271,7 +261,6 @@ export default function Organizations() {
                       </div>
                     </Link>
 
-                    {/* Delete Button */}
                     {org.id !== DEMO_ORG_ID && (
                       <button
                         onClick={(e) =>
@@ -300,7 +289,6 @@ export default function Organizations() {
           </div>
         )}
 
-        {/* Error */}
         {error && (
           <div className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-700 text-sm flex items-start gap-3 mt-6 shadow-neo-sm">
 
