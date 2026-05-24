@@ -28,36 +28,27 @@ class Predictor:
         Predict probability employee will leave in next 12 months.
         Returns: {probability: 0-1, risk_level, risk_factors}
         """
-        probability = 0.15  # Base rate
+        probability = 0.15 
 
-        # Factor 1: Authority gap (hidden power risk or ignored authority risk)
         authority_gap = abs(influence_score - formal_authority)
         if authority_gap > 3:
             if influence_score > formal_authority:
-                # Hidden power: may leave if not recognized
                 probability += 0.15
             else:
-                # Ignored authority: likely frustrated
                 probability += 0.20
 
-        # Factor 2: Credibility (how often are they right?)
         if objections_accepted_ratio < 0.3:
-            # Rarely listened to
             probability += 0.15
 
-        # Factor 3: Tenure (flight risk highest at 2-3 year mark)
         if 18 <= tenure_months <= 36:
             probability += 0.10
         elif tenure_months < 12:
             probability += 0.05
 
-        # Factor 4: Department baseline
         probability += department_turnover_rate * 0.2
 
-        # Clamp
         probability = min(probability, 0.95)
 
-        # Determine risk level
         if probability > 0.6:
             risk_level = "critical"
         elif probability > 0.4:
@@ -100,7 +91,7 @@ class Predictor:
         self,
         proposer_influence: float,
         proposer_conviction: float,
-        objectors: list[dict],  # [{influence, conviction}, ...]
+        objectors: list[dict],  
         decision_domain: str,
     ) -> dict:
         """
@@ -117,7 +108,6 @@ class Predictor:
                 decision_domain,
             )
         else:
-            # Fallback heuristic
             max_objector_influence = max(objector_influences) if objector_influences else 0
             avg_objector_conviction = np.mean(objector_convictions) if objector_convictions else 0
 
@@ -144,21 +134,20 @@ class Predictor:
 
     def predict_organization_health_trend(
         self,
-        current_health_scores: dict,  # {metric: score}
-        historical_scores: list[dict],  # [{timestamp, metric: score}, ...]
+        current_health_scores: dict, 
+        historical_scores: list[dict],  
     ) -> dict:
         """
         Predict org health trajectory over next 6 months.
         Returns: {forecast_6mo, trends, risk_areas}
         """
         forecast = {
-            "overall_health_6mo": 5.0,  # Default
+            "overall_health_6mo": 5.0,  
             "metric_forecasts": {},
             "trend": "stable",
             "risk_areas": [],
         }
 
-        # Calculate trends for each metric
         for metric, current_score in current_health_scores.items():
             if len(historical_scores) < 2:
                 forecast["metric_forecasts"][metric] = {
@@ -168,14 +157,12 @@ class Predictor:
                 }
                 continue
 
-            # Simple linear trend
             historical_values = [s.get(metric, current_score) for s in historical_scores[-6:]]
             if len(historical_values) > 1:
                 trend_direction = np.polyfit(range(len(historical_values)), historical_values, 1)[0]
             else:
                 trend_direction = 0
 
-            # Forecast
             periods_ahead = 6
             forecast_value = current_score + (trend_direction * periods_ahead)
             forecast_value = max(0, min(forecast_value, 10))
@@ -194,7 +181,6 @@ class Predictor:
                 "trend_slope": trend_direction,
             }
 
-            # Risk detection
             if forecast_value < 3:
                 forecast["risk_areas"].append({
                     "metric": metric,
@@ -202,7 +188,6 @@ class Predictor:
                     "severity": "critical" if forecast_value < 2 else "high",
                 })
 
-        # Overall forecast
         overall_current = np.mean(list(current_health_scores.values()))
         overall_trend = np.mean([s.get("trend_slope", 0) for s in forecast["metric_forecasts"].values()])
 
@@ -237,11 +222,10 @@ class Predictor:
                 "trend": "unknown",
             }
 
-        # Linear regression on recent history
         historical = list(historical_days[-6:])
         trend_slope = np.polyfit(range(len(historical)), historical, 1)[0]
 
-        forecast_days = current_avg_days + (trend_slope * 3)  # 3 month forecast
+        forecast_days = current_avg_days + (trend_slope * 3)  
         forecast_days = max(1, forecast_days)
 
         if trend_slope > 0.5:
@@ -259,7 +243,6 @@ class Predictor:
             "recommendation": self._velocity_recommendation(forecast_days, trend),
         }
 
-    # ─── Helpers ──────────────────────────────────────────────────────────────
 
     def _get_attrition_mitigation_actions(self, risk_factors: list[dict]) -> list[str]:
         """Generate action items to mitigate attrition risk"""
