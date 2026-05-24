@@ -7,15 +7,12 @@ import { PageHeader, AnalyzeButton, AlertBox } from '../components/Shared'
 export default function Analysis() {
   const { orgId } = useParams()
   const navigate = useNavigate()
-
   const [org, setOrg] = useState(null)
   const [loading, setLoading] = useState(true)
   const [analyses, setAnalyses] = useState([])
   const [currentAnalysis, setCurrentAnalysis] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [error, setError] = useState('')
-
-  // Bug 3 fix: ref so the interval closure always sees latest value
   const currentAnalysisRef = useRef(null)
 
   function setCurrentAnalysisAndRef(data) {
@@ -50,7 +47,6 @@ export default function Analysis() {
     }
   }
 
-  // Bug 2 + 3 fix: use ref, handle both id and analysis_id field names
   async function pollAnalysisStatus() {
     if (!currentAnalysisRef.current) return
 
@@ -84,7 +80,7 @@ export default function Analysis() {
 
     try {
       const result = await triggerAnalysis(orgId)
-      setCurrentAnalysisAndRef(result)  // Bug 3 fix: use the ref setter
+      setCurrentAnalysisAndRef(result)  
       setAnalyzing(false)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to trigger analysis')
