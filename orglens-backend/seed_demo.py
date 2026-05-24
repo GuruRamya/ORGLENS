@@ -103,6 +103,7 @@ def main():
             "industry": args.industry,
             "size_estimate": args.size,
             "mission_statement": args.mission,
+            "is_default": True,
         })
         org_id = org_data["id"]
         log(f"Demo org created: {org_id}", "OK")
