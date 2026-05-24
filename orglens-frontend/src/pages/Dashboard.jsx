@@ -14,7 +14,6 @@ import { PositiveSignalsCard } from '../components/Cards/PositiveSignalCard'
 import { ArchetypeCard } from '../components/Cards/ArchetypeCard'
 import { DataQualityCard } from '../components/Cards/DataQualityCard'
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function scoreColor(score, invert = false) {
   const s = invert ? 10 - score : score
@@ -92,7 +91,6 @@ function SectionHeader({ icon, title, subtitle, score, scoreInvert }) {
   )
 }
 
-// ─── Card Shell ───────────────────────────────────────────────────────────────
 
 function AnalysisCard({ id, icon, title, subtitle, score, scoreInvert, expanded, onToggle, children, accent }) {
   const accentBorder = accent === 'red' ? 'border-red-200' : 'border-neutral-200'
@@ -130,7 +128,6 @@ function AnalysisCard({ id, icon, title, subtitle, score, scoreInvert, expanded,
   )
 }
 
-// ─── 10 Deep Cards ────────────────────────────────────────────────────────────
 
 function OrgHealthCard({ data }) {
   if (!data) return <p className="text-neutral-400 text-sm">No data available</p>
@@ -236,9 +233,6 @@ function TrustGapCard({ data }) {
 }
 
 
-// ─── ML Classification ────────────────────────────────────────────────────────
-// Sends the raw nodes array to Claude and gets back level + power_type for each.
-
 async function classifyNodesWithML(nodes) {
   if (!nodes || nodes.length === 0) return []
   
@@ -254,7 +248,6 @@ async function classifyNodesWithML(nodes) {
   try {
     return await classifyPowerNodes(unique)
   } catch {
-    // fallback
     return unique.map(node => ({
       ...node,
       level: node.level || deriveLevel(node),
@@ -282,8 +275,6 @@ function deriveType(node) {
   if (fa - ai > 1.5) return 'ignored_authority'
   return 'neutral'
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const TYPE_ICONS = {
   hidden_power: '⚡',
@@ -352,12 +343,11 @@ function NamePopup({ type, names, colorClass }) {
   )
 }
 
-// ─── Main Export ──────────────────────────────────────────────────────────────
 
 export function PowerStructureCard({ data }) {
   const [mlNodes, setMlNodes] = useState([])
   const [loading, setLoading] = useState(true)
-  const [openPopup, setOpenPopup] = useState(null) // 'hidden-power' | 'formal-leader' | 'gatekeeper' | 'ignored-auth' | null
+  const [openPopup, setOpenPopup] = useState(null) 
 
   useEffect(() => {
     if (!data?.nodes?.length) {
@@ -365,7 +355,6 @@ export function PowerStructureCard({ data }) {
       return
     }
 
-    // Deduplicate
     const seen = new Set()
     const unique = (data.nodes || []).filter(n => {
       if (!n?.name) return false
@@ -375,7 +364,6 @@ export function PowerStructureCard({ data }) {
       return true
     })
 
-    // No API call needed — backend already computed everything
     const classified = unique.map(node => ({
       ...node,
       level: node.level || deriveLevel(node),
@@ -388,7 +376,6 @@ export function PowerStructureCard({ data }) {
 
   if (!data) return <p className="text-neutral-400 text-sm">No data available</p>
 
-  // Group by power type
   const byType = {
     'hidden-power':  mlNodes.filter(n => n.power_type === 'hidden_power'),
     'formal-leader': mlNodes.filter(n => n.power_type === 'formal_leader'),
@@ -396,7 +383,6 @@ export function PowerStructureCard({ data }) {
     'ignored-auth':  mlNodes.filter(n => n.power_type === 'ignored_authority'),
   }
 
-  // Group by level for org tree
   const byLevel = {}
   for (const node of mlNodes) {
     const lvl = LEVEL_ORDER.includes(node.level) ? node.level : 'Unknown'
@@ -420,7 +406,6 @@ export function PowerStructureCard({ data }) {
 
   return (
     <div className="space-y-5">
-      {/* ── Count boxes ── */}
       <div>
         <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">
           Power types — click to see names
@@ -433,7 +418,6 @@ export function PowerStructureCard({ data }) {
         </div>
       </div>
 
-      {/* ── Popup name list ── */}
       {openPopup && (
         <NamePopup
           type={openPopup}
@@ -442,10 +426,8 @@ export function PowerStructureCard({ data }) {
         />
       )}
 
-      {/* ── Divider ── */}
       <div className="border-t border-neutral-100" />
 
-      {/* ── Org tree — completely separate, always visible ── */}
       <div>
         <p className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">
           Org structure — by level
@@ -911,8 +893,6 @@ function PredictionsCard({ data }) {
 }
 
 function generateFallbackRecommendations(dashboardData) {
-  // Called when API returns no recommendations.
-  // Derives actionable items from other cards' findings.
   const recs = []
   let id = 1
 
@@ -926,7 +906,6 @@ function generateFallbackRecommendations(dashboardData) {
   const gatekeepers = dashboardData?.gatekeepers?.gatekeepers || []
   const spofs       = dashboardData?.resilience?.single_points_of_failure || []
 
-  // ── Trust Gap ──────────────────────────────────────────────────────────────
   if (trustGap && trustGap.trust_gap_score > 4) {
     recs.push({
       id: id++,
@@ -947,7 +926,6 @@ function generateFallbackRecommendations(dashboardData) {
     })
   }
 
-  // ── Single Points of Failure ───────────────────────────────────────────────
   if (spofs && spofs.length > 0) {
     const top = spofs[0]
     recs.push({
@@ -969,7 +947,6 @@ function generateFallbackRecommendations(dashboardData) {
     })
   }
 
-  // ── Decision Velocity ──────────────────────────────────────────────────────
   if (velocity && velocity.avg_days > 14) {
     const bottleneck = (velocity.bottlenecks || velocity.bottleneck_persons || [])[0]
     recs.push({
@@ -991,7 +968,6 @@ function generateFallbackRecommendations(dashboardData) {
     })
   }
 
-  // ── Root Causes from Diagnosis ────────────────────────────────────────────
   if (diagnosis && diagnosis.root_causes) {
     const rootCauses = diagnosis.root_causes || []
     rootCauses.slice(0, 2).forEach(rc => {
@@ -1017,7 +993,6 @@ function generateFallbackRecommendations(dashboardData) {
     })
   }
 
-  // ── Hidden Power misalignment ─────────────────────────────────────────────
   if (influencers && influencers.length > 0) {
     const hiddenPowers = influencers.filter(i => i.type === 'hidden_power')
     if (hiddenPowers.length > 0) {
@@ -1043,7 +1018,6 @@ function generateFallbackRecommendations(dashboardData) {
     }
   }
 
-  // ── Attrition risks ───────────────────────────────────────────────────────
   if (predictions && predictions.attrition_risks) {
     const attritionRisks = predictions.attrition_risks || []
     if (attritionRisks.length > 0) {
@@ -1070,7 +1044,6 @@ function generateFallbackRecommendations(dashboardData) {
     }
   }
 
-  // ── Org health overall ────────────────────────────────────────────────────
   if (health && health.org_health_score < 6) {
     const lowest = Object.entries(health?.health_breakdown || {})
       .sort((a, b) => a[1] - b[1])
@@ -1095,7 +1068,6 @@ function generateFallbackRecommendations(dashboardData) {
     })
   }
 
-  // Generic fallback if absolutely nothing triggers
   if (recs.length === 0) {
     recs.push({
       id: id++,
@@ -1113,13 +1085,11 @@ function generateFallbackRecommendations(dashboardData) {
     })
   }
 
-  // Sort by priority_rank (lower = more urgent)
   return recs.sort((a, b) => (a.priority_rank || 999) - (b.priority_rank || 999))
 }
 
 function RecommendationsCard({ data, dashboardData }) {
   const fromApi = Array.isArray(data) ? data : (data?.recommendations || [])
-  // Use API recs if present; generate fallback otherwise
   const recs = fromApi.length > 0 ? fromApi : generateFallbackRecommendations(dashboardData)
   const isFallback = fromApi.length === 0 && recs.length > 0
 
@@ -1272,7 +1242,6 @@ function DeepIntelCard({ data }) {
   )
 }
 
-// ─── AI Chatbot ───────────────────────────────────────────────────────────────
 
 function AIChatbot({ dashboard, org, analysisId }) {
   const [open, setOpen] = useState(false)
@@ -1366,7 +1335,6 @@ function AIChatbot({ dashboard, org, analysisId }) {
 
   return (
     <>
-      {/* Floating button — Robot icon */}
       <button
         onClick={() => setOpen(true)}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-maroon-600 text-white shadow-neo-lg flex items-center justify-center hover:bg-maroon-700 transition-all duration-300 ${open ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
@@ -1375,7 +1343,6 @@ function AIChatbot({ dashboard, org, analysisId }) {
         <Bot size={24} />
       </button>
 
-      {/* Chat panel */}
       {open && (
         <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[520px] rounded-2xl border border-neutral-200 bg-white shadow-neo-lg flex flex-col overflow-hidden">
 
@@ -1443,7 +1410,6 @@ function AIChatbot({ dashboard, org, analysisId }) {
             <div ref={bottomRef} />
           </div>
 
-          {/* Suggestions */}
           {messages.length <= 1 && (
             <div className="px-3 pb-2 flex flex-wrap gap-1.5">
               {[
@@ -1466,7 +1432,6 @@ function AIChatbot({ dashboard, org, analysisId }) {
             </div>
           )}
 
-          {/* Input */}
           <div className="p-3 border-t border-neutral-200 flex gap-2">
             <input
               value={input}
@@ -1488,7 +1453,6 @@ function AIChatbot({ dashboard, org, analysisId }) {
     </>
   )
 }
-// ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
   const { orgId, analysisId } = useParams()
@@ -1649,7 +1613,6 @@ export default function Dashboard() {
    {
       id: 'contradictions', icon: '🚨', title: 'Contradictions',
       subtitle: `${(d.contradictions || []).length} gaps between claims & reality`,
-      // Real data from ContradictionDetector — no derivation needed
       content: <ContradictionCard data={d.contradictions || []} />,
     },
     {
@@ -1697,7 +1660,6 @@ export default function Dashboard() {
       </div>
 
       <div className="relative max-w-5xl mx-auto px-6 py-10">
-        {/* Top bar */}
         <div className="flex items-center justify-between mb-8">
           <button
             onClick={() => navigate(`/org/${orgId}/analysis`)}
@@ -1727,7 +1689,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Title */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-maroon-600 flex items-center justify-center text-white text-lg shadow-neo-sm">
@@ -1740,7 +1701,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
           {[
             { label: 'Org Health', value: d.org_health?.org_health_score?.toFixed(1), unit: '/10', icon: '💚', invert: false },
@@ -1758,10 +1718,8 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* 10 Cards */}
         <div className="space-y-3">
           {cards.map(({ id, icon, title, subtitle, score, scoreInvert, content, isSpecial, render }) => {
-            // Special cards (Archetype, Positive Signals, Data Quality) have their own expanded state
             if (isSpecial) {
               return (
                 <div key={id} className="rounded-2xl border border-neutral-200 bg-white shadow-neo-sm hover:shadow-neo-md transition-all">
@@ -1787,7 +1745,6 @@ export default function Dashboard() {
               )
             }
             
-            // Regular cards use AnalysisCard wrapper
             return (
               <AnalysisCard
                 key={id}
@@ -1838,7 +1795,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Floating AI Chatbot */}
       <AIChatbot dashboard={dashboard} org={org} analysisId={analysisId} />
     </div>
   )
