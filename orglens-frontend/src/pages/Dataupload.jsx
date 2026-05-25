@@ -140,22 +140,26 @@ export default function DataUpload() {
 }
 
   async function handleSlackAuth() {
-  setSyncLoading(true)
-  setError('')
-  try {
-    const response = await getSlackAuthUrl(orgId)
-    const redirectUrl = response.url || response.auth_url
-    if (!redirectUrl) {
-      setError('No redirect URL received from server')
-      return
+    setSyncLoading(true)
+    setError('')
+    try {
+      const response = await getSlackAuthUrl(orgId)
+      console.log('Slack auth response:', response)  
+      const redirectUrl = response.url || response.auth_url
+      console.log('Redirect URL:', redirectUrl)  
+      if (!redirectUrl) {
+        setError('No redirect URL received from server')
+        return
+      }
+      console.log('Redirecting to:', redirectUrl)  
+      window.location.href = redirectUrl
+    } catch (err) {
+      console.error('Slack auth error:', err)  
+      setError('Failed to start Slack authentication')
+    } finally {
+      setSyncLoading(false)
     }
-    window.location.href = redirectUrl
-  } catch (err) {
-    setError('Failed to start Slack authentication')
-  } finally {
-    setSyncLoading(false)
   }
- }
 
   async function handleGmailAuth() {
   setSyncLoading(true)
