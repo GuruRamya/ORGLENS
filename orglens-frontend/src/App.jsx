@@ -11,6 +11,7 @@ import { isAuthenticated } from './lib/auth'
 import { Navigate } from 'react-router-dom'
 import DeepDiveModal from './pages/DeepDiveModal'
 import DemoPage from './pages/DemoPage'
+import { useEffect } from 'react'
 
 function ProtectedRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />
@@ -18,6 +19,13 @@ function ProtectedRoute({ children }) {
 
 
 export default function App() {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetch('https://orglens.onrender.com/health').catch(() => {})
+    }, 5 * 60 * 1000) // Every 5 minutes
+    
+    return () => clearInterval(interval) // Cleanup
+  }, [])
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
