@@ -14,6 +14,8 @@ import DemoPage from './pages/DemoPage'
 
 const DEMO_ORG_ID = import.meta.env.VITE_DEMO_ORG_ID
 const DEMO_ANALYSIS_ID = import.meta.env.VITE_DEMO_ANALYSIS_ID
+console.log('DEMO_ORG_ID:', DEMO_ORG_ID)
+console.log('DEMO_ANALYSIS_ID:', DEMO_ANALYSIS_ID)
 
 function ProtectedRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" replace />
