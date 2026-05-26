@@ -2,21 +2,11 @@ from textblob import TextBlob
 from typing import Optional
 import re
 
-
 class SentimentAnalyzer:
-    """
-    Analyze sentiment and urgency of messages.
-    Returns sentiment scores (-1 to 1) and urgency levels (0-1).
-    """
-
     def __init__(self):
         pass
 
     def analyze_sentiment(self, text: str) -> dict:
-        """
-        Analyze sentiment of text.
-        Returns: {sentiment_score: -1 to 1, sentiment_label: negative/neutral/positive}
-        """
         try:
             blob = TextBlob(text)
             polarity = blob.sentiment.polarity  
@@ -46,10 +36,6 @@ class SentimentAnalyzer:
             }
 
     def analyze_urgency(self, text: str) -> dict:
-        """
-        Analyze urgency signals in text.
-        Returns: {urgency_score: 0-1, urgency_level: low/medium/high/critical}
-        """
         text_lower = text.lower()
         score = 0.0
 
@@ -94,10 +80,6 @@ class SentimentAnalyzer:
         }
 
     def analyze_tone(self, text: str) -> dict:
-        """
-        Analyze tone of communication.
-        Returns: {tone_type, is_formal, is_aggressive, is_questioning, is_collaborative}
-        """
         text_lower = text.lower()
 
         formal_indicators = ["therefore", "pursuant", "moreover", "accordingly", "hereby"]
@@ -141,10 +123,6 @@ class SentimentAnalyzer:
         }
 
     def analyze_confidence(self, text: str) -> dict:
-        """
-        Analyze confidence level in the message.
-        Returns: {confidence_score: 0-1, is_confident, uses_qualifiers}
-        """
         text_lower = text.lower()
 
         confident_phrases = [
@@ -173,10 +151,6 @@ class SentimentAnalyzer:
         }
 
     def analyze_specificity(self, text: str) -> dict:
-        """
-        Analyze how specific/concrete a message is.
-        Returns: {specificity_score: 0-1, has_numbers, has_examples, is_abstract}
-        """
         text_lower = text.lower()
         words = text.split()
 
