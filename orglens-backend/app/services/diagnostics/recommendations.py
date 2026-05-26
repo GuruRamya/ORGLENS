@@ -1,12 +1,7 @@
 from typing import Optional
 from loguru import logger
 
-
 class RecommendationEngine:
-    """
-    Generate actionable recommendations based on diagnostic findings.
-    Scores by: impact, effort, timeline, cost, confidence.
-    """
 
     def __init__(self):
         self.logger = logger
@@ -15,20 +10,6 @@ class RecommendationEngine:
         self,
         diagnostics: dict,
     ) -> list[dict]:
-        """
-        Generate prioritized recommendations based on full diagnostic report.
-
-        diagnostics structure:
-        {
-            "trust_gap": {...},
-            "resilience": {...},
-            "org_health": {...},
-            "power_structure": {...},
-            "decision_velocity": {...},
-        }
-
-        Returns: list of {title, description, impact, effort, timeline, cost, confidence, priority_rank}
-        """
         recommendations = []
 
         if diagnostics.get("trust_gap", {}).get("trust_gap_score", 0) > 6:
@@ -279,10 +260,6 @@ class RecommendationEngine:
 
 
     def _calculate_priority(self, recommendation: dict) -> float:
-        """
-        Calculate priority score for a recommendation.
-        Higher = more urgent to do.
-        """
         score = 0.0
 
         impact_map = {"critical": 3, "high": 2, "medium": 1, "low": 0}
