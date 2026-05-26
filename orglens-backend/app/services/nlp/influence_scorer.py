@@ -1,13 +1,7 @@
 from typing import Optional
 from loguru import logger
 
-
 class InfluenceScorer:
-    """
-    Score the influence/power level of a message and its sender.
-    Combines multiple signals: tone, conviction, reach, response patterns.
-    """
-
     def __init__(self):
         self.logger = logger
 
@@ -19,10 +13,6 @@ class InfluenceScorer:
         received_responses: int = 0,
         decision_followed: bool = False,
     ) -> float:
-        """
-        Score influence of a single message (0-10).
-        Combines: tone, content, authority, reception, outcome.
-        """
         score = 0.0
 
         content_score = self._score_content_influence(text)  
@@ -49,10 +39,6 @@ class InfluenceScorer:
         objections_total: int,
         decision_outcomes: list[bool],
     ) -> float:
-        """
-        Score overall influence of a person (0-10).
-        Based on: message volume, quality, response patterns, decision tracking.
-        """
         score = 0.0
 
         if messages_count > 100:
@@ -92,10 +78,6 @@ class InfluenceScorer:
         formal_authority: float,
         actual_influence: float,
     ) -> float:
-        """
-        Score the gap between formal authority and actual influence (0-10).
-        High score = big gap (either hidden power or ignored authority).
-        """
         gap = abs(formal_authority - actual_influence)
         return min(gap, 10.0)
 
@@ -106,10 +88,6 @@ class InfluenceScorer:
         message_tone: str,
         decision_outcomes: list[bool],
     ) -> str:
-        """
-        Categorize the type of influence this person has.
-        Returns: hidden_power, formal_leader, ignored_authority, neutral, gatekeeper
-        """
         authority_gap = actual_influence - formal_authority
 
         if actual_influence > formal_authority + 2.0:
@@ -130,10 +108,6 @@ class InfluenceScorer:
         decisions_proposed: int,
         decisions_implemented: int,
     ) -> float:
-        """
-        Calculate credibility score (0-1).
-        How often are their judgments validated by outcomes?
-        """
         if objections_made == 0 and decisions_proposed == 0:
             return 0.5
 
