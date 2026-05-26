@@ -105,31 +105,10 @@ export default function DataUpload() {
     setFile(null)
     
     const analysisResult = await triggerAnalysis(orgId)
-    setAnalysisId(analysisResult.analysis_id)
-    setStatus('running')
-    setProgress(0)
-    const interval = setInterval(async () => {
-        try {
-          const statusData = await getAnalysisStatus(analysisResult.analysis_id)
-          setProgress(statusData.progress || 0)
-          setStatus(statusData.status)
-          
-          if (statusData.status === 'completed') {
-            clearInterval(interval)
-            setProgress(100)
-            setTimeout(() => {
-              navigate(`/org/${orgId}/dashboard/${analysisResult.analysis_id}`)
-            }, 1000)
-          }
-        } catch (err) {
-          console.error('Status check failed:', err)
-        }
-      }, 500)
-
+    
     setTimeout(() => {
-        clearInterval(interval)
         navigate(`/org/${orgId}/dashboard/${analysisResult.analysis_id}`)
-      }, 60000)
+      }, 2000)
       
   } catch (err) {
     setSuccess('')
