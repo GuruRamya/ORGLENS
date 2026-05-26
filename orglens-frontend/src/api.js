@@ -1,7 +1,6 @@
 import axios from 'axios'
 import { getToken, logout } from './lib/auth'
-const API_BASE = import.meta.env.VITE_API_URL || ''
-const BASE = `${API_BASE}/api`
+const BASE = '/api'
 
 axios.interceptors.request.use(config => {
   const token = getToken()
@@ -28,7 +27,7 @@ export async function getOrganizations() {
     return data
   } catch (err) {
     if (err.response && err.response.status === 404) {
-      return []   
+      return []  
     }
     throw err
   }
@@ -157,6 +156,12 @@ export async function chatWithAnalysis(analysisId, messages, context) {
 
 export async function deleteOrganization(orgId) {
   await axios.delete(`${BASE}/organizations/${orgId}`)
+}
+
+export const fetchDemoReport = async () => {
+  const response = await fetch('/api/demo/report')
+  if (!response.ok) throw new Error('Failed to fetch demo report')
+  return response.json()
 }
 
 export default {
