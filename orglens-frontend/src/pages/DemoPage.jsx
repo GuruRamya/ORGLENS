@@ -6,16 +6,11 @@ import {
   TrendingUp, TrendingDown, Minus, Zap, Bot, X, Send, User
 } from 'lucide-react'
 
+const DEMO_ORG_ID= import.meta.env.VITE_DEMO_ORG_ID
+const DEMO_ANALYSIS_ID = import.meta.env.VITE_DEMO_ANALYSIS_ID
 
 async function fetchDemoReport() {
-  const orgId = import.meta.env.VITE_DEMO_ORG_ID
-  const analysisId = import.meta.env.VITE_DEMO_ANALYSIS_ID
-  
-  if (!orgId || !analysisId) {
-    throw new Error('Demo org/analysis IDs not configured in .env')
-  }
-  
-  const { data } = await axios.get(`/api/dashboard/${orgId}/${analysisId}`)
+  const { data } = await axios.get('/api/demo/report')
   return data
 }
 
@@ -609,7 +604,11 @@ export default function DemoPage() {
   const [expanded, setExpanded] = useState({})
   const navigate = useNavigate()
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    if (DEMO_ORG_ID && DEMO_ANALYSIS_ID) {
+    }
+    load()
+  }, [])
 
   async function load() {
     try {
