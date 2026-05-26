@@ -1,13 +1,7 @@
 from typing import Optional
 from loguru import logger
 
-
 class TrustGapCalculator:
-    """
-    Calculate the gap between organizational claims and actual behavior.
-    Analyzes: mission statements vs. hiring patterns, stated values vs. actual decisions, etc.
-    """
-
     def __init__(self):
         self.logger = logger
 
@@ -16,26 +10,6 @@ class TrustGapCalculator:
         org_claims: dict,  
         actual_data: dict, 
     ) -> dict:
-        """
-        Calculate overall trust gap score and identify specific gaps.
-
-        org_claims format:
-        {
-            "transparency": "All decisions are made transparently",
-            "meritocracy": "We hire and promote based on merit",
-            "work_balance": "We value work-life balance",
-        }
-
-        actual_data format:
-        {
-            "approval_chain_length": 12,
-            "referral_hire_percent": 0.65,
-            "avg_weekly_meetings": 40,
-            "promotion_internal_percent": 0.25,
-        }
-
-        Returns: {overall_gap, claims_analysis, trend}
-        """
         claims_analysis = []
         total_gap = 0
 
@@ -79,11 +53,6 @@ class TrustGapCalculator:
         supporting_evidence: dict,
         contradicting_evidence: dict,
     ) -> dict:
-        """
-        Analyze a single claim against evidence.
-
-        Returns: {claim, gap_size, evidence_balance, is_contradiction}
-        """
         support_strength = sum(v for v in supporting_evidence.values() if isinstance(v, (int, float)))
         contradict_strength = sum(v for v in contradicting_evidence.values() if isinstance(v, (int, float)))
 
@@ -112,10 +81,6 @@ class TrustGapCalculator:
         current_gap: float,
         previous_gaps: list[float],
     ) -> str:
-        """
-        Determine if gap is widening, narrowing, or stable.
-        Returns: widening | narrowing | stable
-        """
         if len(previous_gaps) < 2:
             return "unknown"
 
@@ -133,10 +98,6 @@ class TrustGapCalculator:
 
 
     def _analyze_transparency_claim(self, actual_data: dict) -> dict:
-        """
-        Check: "We have transparent decision-making"
-        Reality indicators: approval chain length, meeting vs. decision time, etc.
-        """
         gap = 5.0  
 
         approval_chain = actual_data.get("approval_chain_length", 0)
@@ -162,10 +123,6 @@ class TrustGapCalculator:
         }
 
     def _analyze_meritocracy_claim(self, actual_data: dict) -> dict:
-        """
-        Check: "We hire and promote based on merit"
-        Reality indicators: referral hire %, internal vs. external promotion, etc.
-        """
         gap = 5.0
 
         referral_hire_percent = actual_data.get("referral_hire_percent", 0.5)
@@ -191,10 +148,6 @@ class TrustGapCalculator:
         }
 
     def _analyze_balance_claim(self, actual_data: dict) -> dict:
-        """
-        Check: "We value work-life balance"
-        Reality indicators: avg meetings per week, after-hours communication, etc.
-        """
         gap = 5.0
 
         avg_meetings = actual_data.get("avg_meetings_per_week", 10)
@@ -220,10 +173,6 @@ class TrustGapCalculator:
         }
 
     def _analyze_innovation_claim(self, actual_data: dict) -> dict:
-        """
-        Check: "We are innovation-first and move fast"
-        Reality indicators: risky projects approved %, decision velocity, etc.
-        """
         gap = 5.0
 
         risky_approved = actual_data.get("risky_projects_approved_percent", 0.5)
