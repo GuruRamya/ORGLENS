@@ -1,15 +1,3 @@
-"""
-Token encryption — wraps Fernet symmetric encryption.
-All OAuth tokens (Slack, Gmail) are encrypted at rest.
-
-Usage:
-    from app.services.security.token_encryption import encrypt_token, decrypt_token
-
-    encrypted = encrypt_token("xoxb-slack-token-...")
-    org.slack_access_token = encrypted          # store this
-
-    raw = decrypt_token(org.slack_access_token) # use this
-"""
 import os
 import base64
 from typing import Optional
