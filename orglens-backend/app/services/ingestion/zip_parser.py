@@ -1,7 +1,3 @@
-"""
-Handles ZIP upload, CSV employee parsing, Slack JSON exports, Gmail mbox exports.
-All paths normalize into the same internal format before NLP pipeline.
-"""
 import zipfile
 import csv
 import json
@@ -55,14 +51,6 @@ class IngestionResult:
 
 
 class ZipParser:
-    """
-    Accepts a ZIP file containing any combination of:
-    - employees.csv  (employee roster)
-    - slack/         (folder with Slack export JSONs per channel)
-    - gmail.mbox     (Gmail Takeout export)
-    - narrative.txt  (company claims / mission text)
-    """
-
     def parse(self, file: BinaryIO, filename: str) -> IngestionResult:
         result = IngestionResult()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -102,10 +90,6 @@ class ZipParser:
             result.errors.append(f"Unsupported file type: {path.name}")
 
     def _parse_csv(self, path: Path, result: IngestionResult):
-        """
-        Expected columns (flexible matching):
-        name, email, title/role/position, department/team, manager, tenure
-        """
         try:
             with open(path, encoding="utf-8", errors="replace") as f:
                 reader = csv.DictReader(f)
@@ -179,10 +163,6 @@ class ZipParser:
 
 
     def _parse_slack_json(self, path: Path, result: IngestionResult):
-        """
-        Slack export: each file is a channel's messages.
-        File name = channel name. Content = list of message objects.
-        """
         try:
             channel_name = path.stem   
             with open(path, encoding="utf-8") as f:
