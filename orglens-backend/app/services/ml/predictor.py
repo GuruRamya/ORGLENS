@@ -3,12 +3,7 @@ from loguru import logger
 import numpy as np
 from datetime import datetime, timedelta
 
-
 class Predictor:
-    """
-    Use trained models to make predictions about organizational behavior.
-    Forecasts: decision outcomes, personnel risks, org health trends.
-    """
 
     def __init__(self, influence_model=None):
         self.influence_model = influence_model
@@ -24,10 +19,6 @@ class Predictor:
         tenure_months: int,
         department_turnover_rate: float,
     ) -> dict:
-        """
-        Predict probability employee will leave in next 12 months.
-        Returns: {probability: 0-1, risk_level, risk_factors}
-        """
         probability = 0.15 
 
         authority_gap = abs(influence_score - formal_authority)
@@ -94,10 +85,6 @@ class Predictor:
         objectors: list[dict],  
         decision_domain: str,
     ) -> dict:
-        """
-        Predict if a proposed decision will be reversed (0-1).
-        Returns: {probability, explanation, confidence}
-        """
         objector_influences = [obj.get("influence", 0) for obj in objectors]
         objector_convictions = [obj.get("conviction", 0) for obj in objectors]
 
@@ -137,10 +124,6 @@ class Predictor:
         current_health_scores: dict, 
         historical_scores: list[dict],  
     ) -> dict:
-        """
-        Predict org health trajectory over next 6 months.
-        Returns: {forecast_6mo, trends, risk_areas}
-        """
         forecast = {
             "overall_health_6mo": 5.0,  
             "metric_forecasts": {},
@@ -211,10 +194,6 @@ class Predictor:
         current_avg_days: float,
         historical_days: list[float],
     ) -> dict:
-        """
-        Predict decision velocity trend.
-        Returns: {forecast_avg_days, trend, bottleneck_projection}
-        """
         if len(historical_days) < 2:
             return {
                 "current_avg_days": current_avg_days,
