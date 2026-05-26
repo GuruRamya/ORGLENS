@@ -1,7 +1,3 @@
-"""
-Classify org into named operating modes.
-Map findings to an archetype.
-"""
 from dataclasses import dataclass
 from typing import List
 from enum import Enum
@@ -127,11 +123,6 @@ class ArchetypeClassifier:
         )
     
     def _build_reasoning(self) -> tuple[list[str], dict]:
-        """
-        Explain WHY archetype was chosen.
-        Makes the output feel intelligent instead of random.
-        """
-
         reasons = []
 
         if self.velocity_score < 10:
@@ -183,10 +174,6 @@ class ArchetypeClassifier:
         return reasons, metrics
     
     def _determine_trajectory(self) -> str:
-        """
-        Is org improving or declining?
-        """
-
         contradiction_count = len(self.contradictions)
 
         if self.health_score >= 7 and contradiction_count <= 1:
