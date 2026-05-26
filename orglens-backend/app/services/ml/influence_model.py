@@ -9,13 +9,6 @@ import json
 
 
 class InfluenceModel:
-    """
-    Train ML models to predict:
-    1. Whether a decision will be reversed based on who objects
-    2. Influence scores for individuals
-    3. Decision outcomes based on input pattern
-    """
-
     def __init__(self):
         self.decision_reversal_model = None
         self.influence_score_model = None
@@ -26,20 +19,6 @@ class InfluenceModel:
         self,
         training_data: list[dict],
     ) -> dict:
-        """
-        Train model to predict if decision will be reversed.
-
-        training_data format:
-        [{
-            "objectors": [...objector_ids...],
-            "objector_influence_scores": [...],
-            "objector_conviction_levels": [...],
-            "decision_domain": "hiring|budget|product|etc",
-            "was_reversed": True/False,
-        }]
-
-        Returns: {accuracy, feature_importance, model_stats}
-        """
         if len(training_data) < 10:
             self.logger.warning("Not enough training data for reversal model")
             return {"status": "insufficient_data"}
@@ -82,24 +61,6 @@ class InfluenceModel:
         self,
         training_data: list[dict],
     ) -> dict:
-        """
-        Train model to predict influence scores for people.
-
-        training_data format:
-        [{
-            "messages_count": int,
-            "avg_message_influence": float,
-            "avg_response_count": int,
-            "objections_made": int,
-            "objections_accepted": int,
-            "decisions_proposed": int,
-            "decisions_implemented": int,
-            "formal_authority": float 0-10,
-            "actual_influence": float 0-10,  # TARGET
-        }]
-
-        Returns: {r2_score, feature_importance, model_stats}
-        """
         if len(training_data) < 10:
             self.logger.warning("Not enough training data for influence model")
             return {"status": "insufficient_data"}
@@ -150,10 +111,6 @@ class InfluenceModel:
         objector_conviction_levels: list[float],
         decision_domain: str,
     ) -> Tuple[float, dict]:
-        """
-        Predict probability that a decision will be reversed (0-1).
-        Returns: (probability, explanation)
-        """
         if self.decision_reversal_model is None:
             return 0.5, {"status": "model_not_trained"}
 
@@ -186,10 +143,6 @@ class InfluenceModel:
         decisions_implemented: int,
         formal_authority: float,
     ) -> Tuple[float, dict]:
-        """
-        Predict influence score for a person (0-10).
-        Returns: (predicted_influence, explanation)
-        """
         if self.influence_score_model is None:
             return formal_authority, {"status": "model_not_trained"}
 
