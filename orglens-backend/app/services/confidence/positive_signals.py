@@ -1,7 +1,3 @@
-"""
-Detect positive signals — what's working well.
-Balance the doom machine narrative.
-"""
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 from enum import Enum
@@ -123,10 +119,6 @@ class PositiveSignalDetector:
         return signals
     
     def _generate_fallback_strengths(self) -> List[PositiveSignal]:
-        """
-        Even struggling organizations have strengths.
-        Generate realistic fallback positives from available behavior.
-        """
         fallback = []
 
         total_people = len(self.person_signals)
