@@ -7,6 +7,7 @@ import { PageHeader, AnalyzeButton, AlertBox } from '../components/Shared'
 export default function Analysis() {
   const { orgId } = useParams()
   const navigate = useNavigate()
+
   const [org, setOrg] = useState(null)
   const [loading, setLoading] = useState(true)
   const [analyses, setAnalyses] = useState([])
@@ -49,7 +50,6 @@ export default function Analysis() {
 
   async function pollAnalysisStatus() {
     if (!currentAnalysisRef.current) return
-
     const id = currentAnalysisRef.current.analysis_id || currentAnalysisRef.current.id
     if (!id) return
 
@@ -59,9 +59,9 @@ export default function Analysis() {
 
       if (status.status === 'completed') {
         const analysisId = status.id || status.analysis_id
-        setAnalyses(prev => prev.map(a =>
-          (a.analysis_id || a.id) === analysisId ? status : a
-        ))
+        setAnalyses((prev) => prev.map((a) =>
+            (a.analysis_id || a.id) === analysisId ? status : a
+          ))
         setTimeout(() => {
           navigate(`/org/${orgId}/dashboard/${analysisId}`)
         }, 2000)
@@ -77,10 +77,9 @@ export default function Analysis() {
   async function handleTriggerAnalysis() {
     setAnalyzing(true)
     setError('')
-
     try {
       const result = await triggerAnalysis(orgId)
-      setCurrentAnalysisAndRef(result)  
+      setCurrentAnalysisAndRef(result)
       setAnalyzing(false)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to trigger analysis')
@@ -89,7 +88,9 @@ export default function Analysis() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-[400px]" />
+    return (
+      <div className="flex items-center justify-center min-h-[400px]" />
+    )
   }
 
   const getStatusIcon = (status) => {
@@ -114,7 +115,10 @@ export default function Analysis() {
     <div className="min-h-screen bg-white relative overflow-hidden">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-maroon-100/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-neutral-100/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div
+          className="absolute bottom-20 right-1/4 w-96 h-96 bg-neutral-100/30 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '1s' }}
+        />
       </div>
 
       <div className="relative max-w-4xl mx-auto px-6 py-12">
@@ -140,7 +144,7 @@ export default function Analysis() {
                 <div className="flex items-center gap-3">
                   {getStatusIcon(currentAnalysis.status)}
                   <div>
-                    <p className="font-bold text-lg capitalize">{currentAnalysis.status}</p>
+                    <p className="font-bold text-lg capitalize"> {currentAnalysis.status} </p>
                     <p className="text-sm mt-1">
                       {currentAnalysis.status === 'completed' && 'Analysis complete! Redirecting to dashboard...'}
                       {currentAnalysis.status === 'processing' && `${currentAnalysis.progress || 0}% complete`}
@@ -156,7 +160,7 @@ export default function Analysis() {
                   <div className="w-full h-2 rounded-full bg-neutral-300 overflow-hidden">
                     <div
                       className="h-full bg-maroon-600 transition-all duration-500"
-                      style={{ width: `${currentAnalysis.progress || 0}%` }}
+                      style={{ width: `${currentAnalysis.progress || 0 }%` }}
                     />
                   </div>
                 </div>
@@ -164,17 +168,24 @@ export default function Analysis() {
             </div>
           )}
 
-          {(!currentAnalysis || currentAnalysis.status === 'failed') && (
+          {(!currentAnalysis ||
+            currentAnalysis.status === 'failed') && (
             <div className="rounded-2xl border border-neutral-200 bg-white p-8 backdrop-blur-xl shadow-neo-md">
               <div className="flex items-center gap-3 mb-6 pb-6 border-b border-neutral-200">
                 <div className="w-10 h-10 rounded-lg bg-maroon-600 flex items-center justify-center text-white font-bold">
                   🚀
                 </div>
-                <h3 className="font-bold text-lg text-neutral-900">Start New Analysis</h3>
+
+                <h3 className="font-bold text-lg text-neutral-900">
+                  Start New Analysis
+                </h3>
               </div>
+
               <p className="text-neutral-600 text-sm mb-6">
-                This will analyze all uploaded communication data and generate comprehensive insights.
+                This will analyze all uploaded communication data
+                and generate comprehensive insights.
               </p>
+
               <AnalyzeButton
                 onClick={handleTriggerAnalysis}
                 loading={analyzing}
@@ -184,7 +195,13 @@ export default function Analysis() {
             </div>
           )}
 
-          {error && <AlertBox type="error" title="Error" message={error} />}
+          {error && (
+            <AlertBox
+              type="error"
+              title="Error"
+              message={error}
+            />
+          )}
 
           {analyses.length > 0 && (
             <div className="rounded-2xl border border-neutral-200 bg-white p-8 backdrop-blur-xl shadow-neo-md">
@@ -192,21 +209,32 @@ export default function Analysis() {
                 <div className="w-10 h-10 rounded-lg bg-maroon-600 flex items-center justify-center text-white font-bold">
                   📊
                 </div>
-                <h3 className="font-bold text-lg text-neutral-900">Previous Analyses</h3>
+
+                <h3 className="font-bold text-lg text-neutral-900">
+                  Previous Analyses
+                </h3>
               </div>
 
               <div className="space-y-3">
-                {analyses.map(analysis => {
-                  const id = analysis.analysis_id || analysis.id
+                {analyses.map((analysis) => {
+                  const id =
+                    analysis.analysis_id || analysis.id
+
                   return (
                     <button
                       key={id}
                       onClick={() => {
-                        if (analysis.status === 'completed') {
-                          navigate(`/org/${orgId}/dashboard/${id}`)
+                        if (
+                          analysis.status === 'completed'
+                        ) {
+                          navigate(
+                            `/org/${orgId}/dashboard/${id}`
+                          )
                         }
                       }}
-                      disabled={analysis.status !== 'completed'}
+                      disabled={
+                        analysis.status !== 'completed'
+                      }
                       className={`w-full text-left p-4 rounded-xl border transition-all ${
                         analysis.status === 'completed'
                           ? 'border-green-200 bg-green-50 hover:shadow-neo-md cursor-pointer'
@@ -216,17 +244,26 @@ export default function Analysis() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           {getStatusIcon(analysis.status)}
+
                           <div>
                             <p className="font-semibold text-neutral-900">
-                              {new Date(analysis.created_at).toLocaleString()}
+                              {new Date(
+                                analysis.created_at
+                              ).toLocaleString()}
                             </p>
+
                             <p className="text-sm text-neutral-600 mt-1">
-                              {analysis.messages_analyzed ?? 0} messages analyzed
+                              {analysis.messages_analyzed ??
+                                0}{' '}
+                              messages analyzed
                             </p>
                           </div>
                         </div>
+
                         {analysis.status === 'completed' && (
-                          <span className="text-sm font-semibold text-green-700">View →</span>
+                          <span className="text-sm font-semibold text-green-700">
+                            View →
+                          </span>
                         )}
                       </div>
                     </button>
@@ -236,21 +273,30 @@ export default function Analysis() {
             </div>
           )}
 
-          {analyses.length === 0 && !currentAnalysis && (
-            <AlertBox
-              type="info"
-              title="No analyses yet"
-              message="Create your first analysis to see results. Make sure you've uploaded communication data first."
-            />
-          )}
+          {analyses.length === 0 &&
+            !currentAnalysis && (
+              <AlertBox
+                type="info"
+                title="No analyses yet"
+                message="Create your first analysis to see results. Make sure you've uploaded communication data first."
+              />
+            )}
         </div>
       </div>
 
       <style jsx>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
+
         div {
           animation: fadeIn 0.5s ease-out;
         }
