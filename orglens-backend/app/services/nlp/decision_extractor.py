@@ -3,12 +3,7 @@ from typing import Optional
 from loguru import logger
 import re
 
-
 class DecisionExtractor:
-    """
-    Extract decision moments, approvals, rejections, objections from communication.
-    Uses NLP pattern matching and keyword detection.
-    """
 
     DECISION_KEYWORDS = {
         "approve": ["approved", "approve", "ok", "accepted", "agreed"],
@@ -35,10 +30,6 @@ class DecisionExtractor:
             self.nlp = None
 
     def extract_decisions(self, text: str) -> list[dict]:
-        """
-        Extract all decision-like statements from text.
-        Returns list of {decision_type, confidence, text_span}
-        """
         decisions = []
         text_lower = text.lower()
 
@@ -65,10 +56,6 @@ class DecisionExtractor:
         return [d for d in decisions if d["is_decision"]]
 
     def extract_objections(self, text: str) -> list[dict]:
-        """
-        Extract objection/concern statements.
-        Returns list of {objection_text, strength}
-        """
         objections = []
         sentences = self._split_sentences(text)
 
@@ -92,10 +79,6 @@ class DecisionExtractor:
         return objections
 
     def extract_influence_signals(self, text: str, sender_title: Optional[str] = None) -> dict:
-        """
-        Extract signals of influence/authority in a message.
-        Returns {has_conviction, uses_veto, uses_questions, uses_suggestions}
-        """
         text_lower = text.lower()
 
         conviction_phrases = [
