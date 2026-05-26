@@ -1,15 +1,8 @@
-"""
-Simple in-memory rate limiter.
-No Redis required.
-"""
-
 import time
 from collections import defaultdict
 from fastapi import HTTPException, Request
 
-
 RATE_LIMIT_STORAGE = defaultdict(list)
-
 
 def rate_limit(
     scope: str,
