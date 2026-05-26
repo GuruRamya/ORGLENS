@@ -3,13 +3,7 @@ from typing import Optional
 from loguru import logger
 import numpy as np
 
-
 class NetworkAnalyzer:
-    """
-    Build and analyze communication networks.
-    Creates graphs showing who talks to whom, influence flows, decision patterns.
-    """
-
     def __init__(self):
         self.logger = logger
 
@@ -18,12 +12,6 @@ class NetworkAnalyzer:
         messages: list[dict],
         employees: dict,  
     ) -> dict:
-        """
-        Build a directed graph of communication patterns.
-
-        messages format: [{sender_id, recipient_ids, content, timestamp, influence_score}]
-        Returns: {nodes: [...], edges: [...], metrics: {...}}
-        """
         graph = nx.DiGraph()
 
         for emp_id, emp_obj in employees.items():
@@ -75,10 +63,6 @@ class NetworkAnalyzer:
         }
 
     def identify_gatekeepers(self, graph: nx.DiGraph) -> list[dict]:
-        """
-        Identify gatekeepers: people who control information flow.
-        Uses betweenness centrality and clustering coefficient.
-        """
         gatekeepers = []
 
         betweenness = nx.betweenness_centrality(graph, weight="weight")
@@ -109,10 +93,6 @@ class NetworkAnalyzer:
         return sorted(gatekeepers, key=lambda x: x["gatekeeper_score"], reverse=True)
 
     def identify_isolated_experts(self, graph: nx.DiGraph) -> list[dict]:
-        """
-        Identify isolated experts: people with high in-degree but low clustering.
-        These are people whose opinion is sought, but they don't network broadly.
-        """
         isolated = []
 
         in_degree = dict(graph.in_degree(weight="weight"))
@@ -136,10 +116,6 @@ class NetworkAnalyzer:
         return sorted(isolated, key=lambda x: x["isolation_score"], reverse=True)
 
     def detect_alliances(self, graph: nx.DiGraph, threshold: float = 0.7) -> list[dict]:
-        """
-        Detect groups of people who communicate tightly (alliances).
-        Uses community detection.
-        """
         from networkx.algorithms import community
 
         undirected = graph.to_undirected()
