@@ -2,13 +2,7 @@ from typing import Optional
 from loguru import logger
 import numpy as np
 
-
 class ResilienceCalculator:
-    """
-    Calculate organizational resilience: how fragile is it?
-    Identifies: single points of failure, knowledge silos, key person dependencies.
-    """
-
     def __init__(self):
         self.logger = logger
 
@@ -19,10 +13,6 @@ class ResilienceCalculator:
         decision_distribution: dict,  
         department_cross_training: dict, 
     ) -> float:
-        """
-        Calculate overall resilience score (0-10).
-        Higher = more resilient. Lower = more fragile.
-        """
         score = 10.0
 
         for spof in single_points_of_failure:
@@ -49,11 +39,6 @@ class ResilienceCalculator:
         decision_data: dict,  
         knowledge_owners: dict,  
     ) -> list[dict]:
-        """
-        Identify employees whose loss would severely impact organization.
-
-        Returns list of: {employee_id, name, impact_score, risk_level, reasons}
-        """
         spofs = []
 
         for emp_id, emp_data in employees.items():
@@ -103,18 +88,6 @@ class ResilienceCalculator:
         knowledge_owners: dict, 
         backup_assignments: Optional[dict] = None,
     ) -> list[dict]:
-        """
-        Identify critical knowledge owned by single people.
-
-        knowledge_owners format:
-        {
-            "vendor_relationships": ["emp_id_1"],
-            "budget_process": ["emp_id_2"],
-            "customer_data_system": ["emp_id_1", "emp_id_2"],
-        }
-
-        Returns: {domain, owners, is_at_risk, backup_available}
-        """
         silos = []
         backup_assignments = backup_assignments or {}
 
@@ -154,14 +127,6 @@ class ResilienceCalculator:
         key_person: dict,
         successors: list[dict],
     ) -> dict:
-        """
-        Assess readiness of successors to replace a key person.
-
-        key_person: {name, role, influence_score, domains}
-        successors: [{name, experience_years, trained_domains}]
-
-        Returns: {readiness_score, ready_successors, training_needed, timeline}
-        """
         readiness_scores = []
 
         for successor in successors:
