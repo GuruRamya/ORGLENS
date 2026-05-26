@@ -1471,7 +1471,7 @@ export default function Dashboard() {
   async function loadDashboard() {
     try {
       const [orgData, dashData] = await Promise.all([
-        getOrganization(orgId),
+        getOrganization(orgId).catch(() => ({ name: 'Demo Organization' })),
         getDashboardReport(analysisId),
       ])
       setOrg(orgData)
