@@ -2,13 +2,7 @@ from typing import Optional
 from loguru import logger
 import numpy as np
 
-
 class OrgHealthCalculator:
-    """
-    Calculate overall organizational health score (0-10).
-    Combines: trust gap, resilience, decision quality, alignment, information flow.
-    """
-
     def __init__(self):
         self.logger = logger
 
@@ -21,13 +15,6 @@ class OrgHealthCalculator:
         alignment_score: float,
         information_flow_score: float,
     ) -> dict:
-        """
-        Calculate composite health score (0-10).
-
-        All inputs are 0-10 scales (except velocity which is in days).
-
-        Returns: {score, grade, breakdown, summary}
-        """
         trust_normalized = 10.0 - trust_gap_score  
         resilience_normalized = resilience_score
         decision_quality_normalized = decision_quality_score
@@ -88,20 +75,13 @@ class OrgHealthCalculator:
         self,
         decisions_made: list[dict],
     ) -> float:
-        """
-        Score quality of decisions made.
-
-        decisions format: [{domain, followed_objections_count, reversed_count, positive_outcomes}]
-
-        Returns: score 0-10
-        """
         if not decisions_made:
             return 5.0
 
         quality_scores = []
 
         for decision in decisions_made:
-            score = 5.0  # Base
+            score = 5.0  
 
             if decision.get("followed_objections_count", 0) > 0:
                 score += 1.0
@@ -123,18 +103,6 @@ class OrgHealthCalculator:
         stated_values: list[str],
         actual_behaviors: dict, 
     ) -> float:
-        """
-        Score alignment between stated values and actual behaviors.
-
-        stated_values: ["innovation", "transparency", "collaboration"]
-        actual_behaviors: {
-            "innovation": 0.3,
-            "transparency": 0.6,
-            "collaboration": 0.8,
-        }
-
-        Returns: score 0-10
-        """
         if not stated_values or not actual_behaviors:
             return 5.0
 
@@ -157,14 +125,6 @@ class OrgHealthCalculator:
         communication_network: dict,
         information_silos: list,
     ) -> float:
-        """
-        Score how well information flows through organization.
-
-        communication_network: {nodes, edges, metrics}
-        information_silos: [{domain, owner_count}]
-
-        Returns: score 0-10
-        """
         score = 5.0
 
         nodes = communication_network.get("nodes", [])
