@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect  } from 'react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { Network, Eye, EyeOff } from 'lucide-react'
 import { login, register } from '../lib/auth'
 
@@ -13,6 +13,13 @@ export default function Auth({ mode = 'login' }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => {
+      const savedRedirect = localStorage.getItem('redirectAfterLogin')
+      if (savedRedirect) {
+        console.log('Redirect destination:', savedRedirect)
+      }
+    }, [])
+
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
@@ -23,7 +30,16 @@ export default function Auth({ mode = 'login' }) {
       } else {
         await register(email, password, name)
       }
-      navigate('/organizations')
+      const redirectPath = localStorage.getItem('redirectAfterLogin')
+      localStorage.removeItem('redirectAfterLogin')
+
+      if (redirectPath) {
+        navigate(redirectPath)
+      } else if (location.state?.redirectTo) {
+        navigate(location.state.redirectTo)
+      } else {
+        navigate('/organizations')
+      }
     } catch (err) {
       setError(err.response?.data?.detail || 'Something went wrong')
     } finally {
