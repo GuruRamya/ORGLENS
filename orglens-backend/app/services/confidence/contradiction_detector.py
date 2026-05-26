@@ -1,7 +1,3 @@
-"""
-Detect where org claims ≠ actual behavior.
-THE MOST DIFFERENTIATING FEATURE.
-"""
 from dataclasses import dataclass
 from typing import List, Optional
 from enum import Enum
@@ -28,10 +24,6 @@ class ContradictionDetector:
     """Find the disconnect between words and actions."""
     
     def __init__(self, claims: List, ml_signals: dict):
-        """
-        claims: ExtractedClaim objects from ClaimExtractor
-        ml_signals: signal data from MLSignalExtractor
-        """
         self.claims = claims
         self.ml_signals = ml_signals
     
@@ -154,10 +146,6 @@ class ContradictionDetector:
         return None
     
     def _get_real_examples(self, signal_key: str, fallback: List[str], limit: int = 3) -> List[str]:
-        """
-        Pull real evidence/examples from ML signals if available.
-        Falls back safely to defaults.
-        """
         examples = self.ml_signals.get("examples", {}).get(signal_key, [])
 
         cleaned = []
