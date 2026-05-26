@@ -21,14 +21,27 @@ function ProtectedRoute({ children }) {
 
 function DashboardRoute() {
   const { orgId, analysisId } = useParams()
-  const isDemoOrg =
+  const isDemoOrg = Boolean(
+    DEMO_ORG_ID && 
+    DEMO_ANALYSIS_ID &&
     String(orgId) === String(DEMO_ORG_ID) &&
     String(analysisId) === String(DEMO_ANALYSIS_ID)
-  
+  )
+  console.log('🔍 DashboardRoute Debug:', {
+    orgId,
+    analysisId,
+    DEMO_ORG_ID,
+    DEMO_ANALYSIS_ID,
+    isDemoOrg,
+  })
+
   if (!isDemoOrg && !isAuthenticated()) {
+    console.log('❌ Not demo and not authenticated, redirecting to login')
     return <Navigate to="/login" replace />
   }
-  
+  if (isDemoOrg) {
+    console.log('✅ Demo org detected, allowing public access')
+  }
   return <Dashboard isDemoOrg={isDemoOrg} />
 }
 
