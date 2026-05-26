@@ -60,9 +60,11 @@ async def get_dashboard_report(
         if not token:
             raise HTTPException(status_code=401, detail="Not authenticated")
         try:
-            from app.services.auth import get_user_from_token  
-            await get_user_from_token(token, db)
-        except Exception:
+            user = await get_current_user(token, db)
+            if not user:
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
+        except Exception as e:
+            logger.error(f"Token validation failed: {e}")
             raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     result = await db.execute(
