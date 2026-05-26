@@ -1,8 +1,3 @@
-"""
-Pattern-based signal extraction.
-Works with ANONYMIZED data — no names, no titles.
-Pure math-based pattern detection.
-"""
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 from enum import Enum
@@ -38,17 +33,8 @@ class SignalSet:
     confidence_level: str      
 
 class SignalAnalyzer:
-    """
-    Extract anonymized patterns from raw communication.
-    No names, no people identification.
-    Pure statistical/linguistic analysis.
-    """
     
     def __init__(self, ml_signals: dict):
-        """
-        ml_signals: output from MLSignalExtractor
-        Contains: person_signals, message patterns, network metrics, etc.
-        """
         self.ml_signals = ml_signals
         self.total_messages = ml_signals.get("message_count", 0)
         self.total_people = ml_signals.get("employee_count", 0)
