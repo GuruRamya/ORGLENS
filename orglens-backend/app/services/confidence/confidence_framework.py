@@ -1,8 +1,3 @@
-"""
-Confidence & data quality framework.
-Every finding tagged with confidence level.
-Nothing reported without data sufficiency check.
-"""
 from enum import Enum
 from dataclasses import dataclass, asdict
 from typing import Optional, Dict, List
