@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
 from loguru import logger
+from typing import Optional
+import os
 from app.services.auth import get_current_user
 from app.models.auth import User
 from app.services.confidence.confidence_framework import ConfidenceCalculator
@@ -25,6 +28,14 @@ from app.schemas.analysis import (
 )
 
 router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
+
+DEMO_ANALYSIS_ID = os.getenv("DEMO_ANALYSIS_ID")
+DEMO_ORG_ID      = os.getenv("DEMO_ORG_ID")
+
+
+def _is_demo(analysis_id: str) -> bool:
+    return DEMO_ANALYSIS_ID and str(analysis_id) == str(DEMO_ANALYSIS_ID)
 
 def _parse_json_field(field):
     """Handle both dict and string JSON fields"""
@@ -43,8 +54,17 @@ def _parse_json_field(field):
 async def get_dashboard_report(
     analysis_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = Depends(oauth2_scheme), 
 ):
+    if not _is_demo(analysis_id):
+        if not token:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        try:
+            from app.services.auth import get_user_from_token  
+            await get_user_from_token(token, db)
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+
     result = await db.execute(
         select(AnalysisReport).where(AnalysisReport.id == analysis_id)
     )
@@ -239,8 +259,10 @@ async def get_dashboard_card(
     analysis_id: str,
     card_type: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = Depends(oauth2_scheme),
 ):
+    if not _is_demo(analysis_id) and not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     result = await db.execute(
         select(AnalysisReport).where(AnalysisReport.id == analysis_id)
     )
@@ -322,8 +344,10 @@ async def get_dashboard_card(
 async def get_data_quality_card(
     analysis_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = Depends(oauth2_scheme),
 ):
+    if not _is_demo(analysis_id) and not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     from uuid import UUID
     
     result = await db.execute(
@@ -502,7 +526,7 @@ def _calculate_total_savings(recommendations: list) -> str:
 @router.post("/classify-nodes")
 async def classify_nodes(
     payload: dict,
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = Depends(oauth2_scheme),
 ):
     from groq import Groq
     import os, json
@@ -587,8 +611,10 @@ async def chat_with_analysis(
     analysis_id: str,
     payload: dict,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = Depends(oauth2_scheme),
 ):
+    if not _is_demo(analysis_id) and not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
     from groq import Groq
     import os, json
     
